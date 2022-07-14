@@ -30,12 +30,29 @@ jobs:
         with:
           target: ${{ matrix.os.target }}
 
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ matrix.settings.target }}-cargo-cache
+
       - name: Install tools on macOS
         run: brew install ninja
-        if: matrix.os == 'macos-latest'
+        if: matrix.settings.os == 'macos-latest'
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+        if: matrix.settings.os == 'macos-latest'
 
       - name: Build JavaScriptCore
         run: cargo xtask build
+
+      - name: Cat CMake error log
+        if: ${{ failure() }}
+        run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
 
       - name: Run binary
         run: cargo run --bin runtime
