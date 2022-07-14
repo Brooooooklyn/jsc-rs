@@ -1,0 +1,41 @@
+on:
+  push:
+    branches: [main]
+    tags-ignore:
+      - '**'
+  pull_request:
+
+env:
+  MACOSX_DEPLOYMENT_TARGET: '10.15'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.settings.os }}
+    name: Build ${{ matrix.settings.target }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Install target
+        uses: actions-rs/toolchain@v1
+        with:
+          target: ${{ matrix.os.target }}
+
+      - name: Install tools on macOS
+        run: brew install ninja
+        if: matrix.os == 'macos-latest'
+
+      - name: Build JavaScriptCore
+        run: cargo xtask build
+
+      - name: Run binary
+        run: cargo run --bin runtime

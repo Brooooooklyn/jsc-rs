@@ -1,0 +1,2 @@
+[workspace]
+members = ["jsc-sys", "jsc", "runtime", "node-api", "xtask"]

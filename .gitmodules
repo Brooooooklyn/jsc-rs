@@ -1,0 +1,4 @@
+[submodule "WebKit"]
+	path = WebKit
+	url = git@github.com:WebKit/WebKit.git
+	shallow = true

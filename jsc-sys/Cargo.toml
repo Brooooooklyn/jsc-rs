@@ -1,0 +1,10 @@
+[package]
+name = "jsc-sys"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+compiler_builtins = "0.1"
+
+[build-dependencies]
+cc = "1"
