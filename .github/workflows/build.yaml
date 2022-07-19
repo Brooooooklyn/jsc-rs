@@ -1,3 +1,5 @@
+name: Build
+
 on:
   push:
     branches: [main]
@@ -53,19 +55,29 @@ jobs:
           xcode-version: latest
         if: matrix.settings.os == 'macos-latest'
 
-      - name: Install tools on macOS
+      - name: Install tools on Windows
         run: |
-          ls C:
-          ls -R C:\msys64
           choco install llvm ninja -y
+          pacman -Syuu --noconfirm make
         if: matrix.settings.os == 'windows-latest'
 
-      # - name: Build JavaScriptCore
-      #   run: |
-      #     cargo xtask build
-      #     cargo build --bin runtime --release
-      #     cp target/release/runtime ./jsc
-      #   if: ${{ !matrix.settings.docker }}
+      - name: Build JavaScriptCore
+        run: |
+          cargo xtask build
+          cargo build --bin runtime --release
+          cp target/release/runtime ./jsc
+        if: matrix.settings.os == 'macos-latest'
+
+      - name: Build JavaScriptCore
+        shell: cmd
+        run: |
+          "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          cargo xtask build
+          cargo build --bin runtime --release
+          cp target/release/runtime.exe ./jsc.exe
+        if: matrix.settings.os == 'windows-latest'
+        env:
+          GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
 
       # - name: Build JavaScriptCore in docker
       #   uses: addnab/docker-run-action@v3
