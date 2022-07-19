@@ -1,0 +1,1 @@
+[![JavaScriptCore Version](https://img.shields.io/badge/JavaScriptCore-wpewebkit%2F2.36.4-hotpink)](https://github.com/WebKit/WebKit/releases/tag/wpewebkit-2.36.4)

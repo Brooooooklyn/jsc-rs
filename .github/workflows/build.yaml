@@ -58,14 +58,15 @@ jobs:
       - name: Install tools on Windows
         run: |
           choco install llvm ninja -y
-          pacman -Syuu --noconfirm make
+          which clang-cl
+          C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
         if: matrix.settings.os == 'windows-latest'
 
       - name: Build JavaScriptCore
         run: |
           cargo xtask build
           cargo build --bin runtime --release
-          cp target/release/runtime ./jsc
+          cp target/release/runtime ./jscc
         if: matrix.settings.os == 'macos-latest'
 
       - name: Build JavaScriptCore
@@ -74,35 +75,35 @@ jobs:
           "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           cargo xtask build
           cargo build --bin runtime --release
-          cp target/release/runtime.exe ./jsc.exe
+          cp target/release/runtime.exe ./jscc.exe
         if: matrix.settings.os == 'windows-latest'
         env:
           GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
 
-      # - name: Build JavaScriptCore in docker
-      #   uses: addnab/docker-run-action@v3
-      #   if: ${{ matrix.settings.docker }}
-      #   with:
-      #     image: ${{ matrix.settings.docker }}
-      #     options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-      #     run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jsc
+      - name: Build JavaScriptCore in docker
+        uses: addnab/docker-run-action@v3
+        if: ${{ matrix.settings.docker }}
+        with:
+          image: ${{ matrix.settings.docker }}
+          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
+          run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jscc
 
-      # - name: Cat CMake error log
-      #   if: ${{ failure() }}
-      #   run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
+      - name: Cat CMake error log
+        if: ${{ failure() }}
+        run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
 
-      # - name: Upload artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: bin-${{ matrix.settings.target }}
-      #     path: jsc
-      #     if-no-files-found: error
-      #   if: matrix.settings.os != 'windows-latest'
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ matrix.settings.target }}
+          path: jscc
+          if-no-files-found: error
+        if: matrix.settings.os != 'windows-latest'
 
-      # - name: Upload artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: bin-${{ matrix.settings.target }}
-      #     path: jsc.exe
-      #     if-no-files-found: error
-      #   if: matrix.settings.os == 'windows-latest'
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ matrix.settings.target }}
+          path: jscc.exe
+          if-no-files-found: error
+        if: matrix.settings.os == 'windows-latest'
