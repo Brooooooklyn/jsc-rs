@@ -1,2 +1,5 @@
 [workspace]
 members = ["jsc-sys", "jsc", "runtime", "node-api", "xtask"]
+
+[profile.release]
+lto = true

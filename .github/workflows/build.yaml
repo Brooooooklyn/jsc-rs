@@ -32,10 +32,11 @@ jobs:
         with:
           submodules: true
 
-      - name: Install target
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           target: ${{ matrix.os.target }}
+          toolchain: stable
         if: ${{ !matrix.settings.docker }}
 
       - name: Cache cargo registry
@@ -72,7 +73,7 @@ jobs:
       - name: Build JavaScriptCore
         shell: cmd
         run: |
-          "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           cargo xtask build
           cargo build --bin runtime --release
           cp target/release/runtime.exe ./jscc.exe
