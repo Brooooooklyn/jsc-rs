@@ -5,3 +5,4 @@
 [submodule "icu"]
 	path = icu
 	url = git@github.com:unicode-org/icu.git
+  shallow = true

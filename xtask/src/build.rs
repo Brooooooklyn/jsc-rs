@@ -16,6 +16,10 @@ pub fn build() {
   {
     build_linux(cmake_build_dir, icu4c_dir);
   }
+  #[cfg(target_os = "windows")]
+  {
+    build_windows(cmake_build_dir, icu4c_dir);
+  }
 }
 
 #[cfg(target_os = "macos")]
@@ -32,30 +36,7 @@ fn build_osx(cmake_build_dir: PathBuf) {
 
 #[cfg(target_os = "linux")]
 fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
-  let mut icu4c_config = Command::new("sh");
-  icu4c_config
-    .arg("-c")
-    .arg("./runConfigureICU Linux --enable-static --disable-shared --with-data-packaging=static")
-    .env("CC", "clang")
-    .env("CXX", "clang++")
-    .env(
-      "CXXFLAGS",
-      "-std=c++20 -stdlib=libc++ -I/usr/lib/llvm-14/include/c++/v1",
-    )
-    .env("LDFLAGS", "-L/usr/lib/llvm-14/lib")
-    .current_dir(icu4c_dir.clone())
-    .stdin(Stdio::inherit())
-    .stdout(Stdio::inherit());
-  assert_command_success(icu4c_config, "config icu4c failed");
-  let cpus = num_cpus::get();
-  let mut make_icu4c = Command::new("make");
-  make_icu4c
-    .arg("-j")
-    .arg(&format!("{}", cpus))
-    .current_dir(icu4c_dir.clone())
-    .stdin(Stdio::inherit())
-    .stdout(Stdio::inherit());
-  assert_command_success(make_icu4c, "build icu4c failed");
+  build_icu(icu4c_dir.clone());
   build_js_core(
     cmake_build_dir,
     JSCoreBuildConfig {
@@ -73,6 +54,32 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
   )
 }
 
+#[cfg(target_os = "windows")]
+fn build_windows(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
+  build_icu(icu4c_dir.clone());
+  let include_flags = format!(
+    "-I{}",
+    icu4c_dir
+      .parent()
+      .unwrap()
+      .join("include")
+      .to_str()
+      .unwrap()
+      .replace(r#"\"#, "/"),
+  );
+  build_js_core(
+    cmake_build_dir,
+    JSCoreBuildConfig {
+      use_pthread_permission_api: false,
+      set_system_cc: true,
+      self_build_icu: true,
+      extra_cxx_flag: include_flags.clone(),
+      extra_c_flag: include_flags.clone(),
+      ..Default::default()
+    },
+  )
+}
+
 #[derive(Debug, Default)]
 struct JSCoreBuildConfig {
   use_pthread_permission_api: bool,
@@ -80,6 +87,84 @@ struct JSCoreBuildConfig {
   self_build_icu: bool,
   extra_c_flag: String,
   extra_cxx_flag: String,
+}
+
+fn build_icu(icu4c_dir: PathBuf) {
+  let mut icu4c_config = Command::new("sh");
+  icu4c_config.arg("-c");
+  icu4c_config.arg(&format!(
+    "./runConfigureICU {} --enable-static=yes --enable-shared=no --with-data-packaging=static --prefix={} {}",
+    if cfg!(target_os = "linux") {
+      "Linux"
+    } else if cfg!(target_os = "windows") {
+      "MSYS/MSVC"
+    } else {
+      panic!("Unsupported OS")
+    },
+    icu4c_dir.parent().unwrap().to_str().unwrap().replace(r#"\"#, "/"),
+    if cfg!(target_os = "windows") {
+      format!("--enable-extras=no --enable-tests=no --enable-tools=no --enable-samples=no --build=x86_64-msvc-mingw64 --host=x86_64-msvc-mingw64")
+    } else {
+      String::new()
+    }
+  ));
+
+  if !cfg!(target_os = "windows") {
+    icu4c_config.env("CC", "clang").env("CXX", "clang++");
+  }
+  icu4c_config
+    .env(
+      "CFLAGS",
+      if cfg!(target_os = "windows") {
+        "-Gy -MD"
+      } else {
+        ""
+      },
+    )
+    .env(
+      "CXXFLAGS",
+      if cfg!(target_os = "windows") {
+        "/std:c++20 -Gy -MD"
+      } else {
+        "-std=c++20 -stdlib=libc++ -I/usr/lib/llvm-14/include/c++/v1"
+      },
+    )
+    .env(
+      "LDFLAGS",
+      if cfg!(target_os = "windows") {
+        ""
+      } else {
+        "-L/usr/lib/llvm-14/lib"
+      },
+    )
+    .current_dir(icu4c_dir.clone())
+    .stderr(Stdio::inherit())
+    .stdin(Stdio::inherit())
+    .stdout(Stdio::inherit());
+  assert_command_success(icu4c_config, "config icu4c failed");
+  let cpus = num_cpus::get();
+  let make_program = if cfg!(target_os = "windows") {
+    "C:/tools/msys64/usr/bin/make"
+  } else {
+    "make"
+  };
+  let mut make_icu4c = Command::new(make_program);
+  make_icu4c
+    .arg("-j")
+    .arg(&format!("{}", cpus))
+    .current_dir(icu4c_dir.clone())
+    .stderr(Stdio::inherit())
+    .stdin(Stdio::inherit())
+    .stdout(Stdio::inherit());
+  assert_command_success(make_icu4c, "build icu4c failed");
+  let mut install_icu4c_command = Command::new(make_program);
+  install_icu4c_command
+    .arg("install")
+    .current_dir(icu4c_dir.clone())
+    .stderr(Stdio::inherit())
+    .stdin(Stdio::inherit())
+    .stdout(Stdio::inherit());
+  assert_command_success(install_icu4c_command, "install icu4c failed");
 }
 
 fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
@@ -99,20 +184,56 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
   let c_flags = format!("{use_pthread_permission_api_flag} {extra_c_flag}")
     .trim()
     .to_owned();
-  let cxx_flags = format!("{use_pthread_permission_api_flag} -std=c++20 {extra_cxx_flag}")
+  let cxx20_flag = if cfg!(target_os = "windows") {
+    ""
+  } else {
+    "-std=c++20"
+  };
+  let cxx_flags = format!("{use_pthread_permission_api_flag} {cxx20_flag} {extra_cxx_flag}")
     .trim()
     .to_owned();
   let icu_flag = if config.self_build_icu {
     format!(
-      "-DICU_INCLUDE_DIR={}",
+      "-DICU_INCLUDE_DIR={} -DCMAKE_LIBRARY_PATH={}",
       env::current_dir()
         .unwrap()
-        .join("icu/icu4c/source/common")
+        .join("icu/icu4c/include")
         .to_str()
         .unwrap()
+        .replace(r#"\"#, "/"),
+      env::current_dir()
+        .unwrap()
+        .join("icu/icu4c/lib")
+        .to_str()
+        .unwrap()
+        .replace(r#"\"#, "/")
     )
   } else {
     "".to_owned()
+  };
+  let icu_uc_in_flag = if cfg!(target_os = "windows") {
+    format!(
+      "-DICU_UC_LIBRARY_RELEASE={} -DICU_I18N_LIBRARY_RELEASE={}",
+      env::current_dir()
+        .unwrap()
+        .join("icu/icu4c/lib/sicuuc.lib")
+        .to_str()
+        .unwrap()
+        .replace(r#"\"#, "/"),
+      env::current_dir()
+        .unwrap()
+        .join("icu/icu4c/lib/sicuin.lib")
+        .to_str()
+        .unwrap()
+        .replace(r#"\"#, "/")
+    )
+  } else {
+    String::new()
+  };
+  let enable_ftl_jit = if cfg!(target_os = "windows") {
+    "OFF"
+  } else {
+    "ON"
   };
   cmake_config
     .arg("-c")
@@ -123,47 +244,46 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
     -DENABLE_STATIC_JSC=ON \
     -DUSE_THIN_ARCHIVES=OFF \
     -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_FTL_JIT=ON \
+    -DENABLE_FTL_JIT={enable_ftl_jit} \
     -DENABLE_JIT=ON \
     -DCMAKE_C_FLAGS="{c_flags}" \
     -DCMAKE_CXX_FLAGS="{cxx_flags}" \
-    -G Ninja {macos_deploy_target_flag} {icu_flag}
+    -G Ninja {icu_uc_in_flag} {macos_deploy_target_flag} {icu_flag}
   "#,
       )
-      .trim(),
+      .trim()
+      .replace("\\\n", ""),
     )
     .current_dir(cmake_build_dir.clone())
+    .stderr(Stdio::inherit())
     .stdin(Stdio::inherit())
     .stdout(Stdio::inherit());
+  #[allow(unused)]
+  let icu4c_source = env::current_dir().unwrap().join("icu/icu4c/source");
   #[cfg(target_os = "macos")]
   {
     cmake_config.env("MACOSX_DEPLOYMENT_TARGET", "10.15");
   }
-  #[cfg(target_os = "linux")]
-  {
-    cmake_config.env(
-      "CMAKE_LIBRARY_PATH",
-      env::current_dir()
-        .unwrap()
-        .join("icu/icu4c/source")
-        .to_str()
-        .unwrap(),
-    );
-  }
+  cmake_config.env("CMAKE_LIBRARY_PATH", icu4c_source.to_str().unwrap());
   if config.set_system_cc {
-    cmake_config.env("CC", "clang");
-    cmake_config.env("CXX", "clang++");
+    if !cfg!(target_os = "windows") {
+      cmake_config.env("CC", "clang").env("CXX", "clang++");
+    }
   }
+  println!("{:?}", &cmake_config);
   assert_command_success(cmake_config, "cmake config failed");
   let mut cmake_build = Command::new("cmake");
   cmake_build
-    .args(&["--build", ".", "--config", "Release", "--target", "jsc"])
+    .args(&["--build", ".", "--config", "Release", "--", "jsc"])
     .current_dir(cmake_build_dir.clone())
+    .stderr(Stdio::inherit())
     .stdin(Stdio::inherit())
     .stdout(Stdio::inherit());
   if config.set_system_cc {
-    cmake_build.env("CC", "clang");
-    cmake_build.env("CXX", "clang++");
+    if !cfg!(target_os = "windows") {
+      cmake_build.env("CC", "clang");
+      cmake_build.env("CXX", "clang++");
+    }
   }
   assert_command_success(cmake_build, "Build JavaScriptCore failed");
 }

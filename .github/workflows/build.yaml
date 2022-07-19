@@ -55,7 +55,7 @@ jobs:
         run: |
           cargo xtask build
           cargo build --bin runtime --release
-          cp release/runtime .
+          cp target/release/runtime ./jsc
         if: ${{ !matrix.settings.docker }}
 
       - name: Build JavaScriptCore in docker
@@ -64,7 +64,7 @@ jobs:
         with:
           image: ${{ matrix.settings.docker }}
           options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime .
+          run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jsc
 
       - name: Cat CMake error log
         if: ${{ failure() }}
@@ -73,15 +73,15 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: runtime-${{ matrix.settings.target }}
-          path: runtime
+          name: bin-${{ matrix.settings.target }}
+          path: jsc
           if-no-files-found: error
         if: matrix.settings.os != 'windows-latest'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: runtime-${{ matrix.settings.target }}
-          path: runtime.exe
+          name: bin-${{ matrix.settings.target }}
+          path: jsc.exe
           if-no-files-found: error
         if: matrix.settings.os == 'windows-latest'
