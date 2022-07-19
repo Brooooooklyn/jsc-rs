@@ -114,15 +114,7 @@ fn build_icu(icu4c_dir: PathBuf) {
     }
   ));
 
-  if cfg!(target_os = "windows") {
-    // On Windows, we need to set the PATH environment variable to include the MSYS2 bin directory.
-    // So that the `c:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.32.31326/bin/HostX64/x64` will occur before `/usr/bin` in `sh.exe` env.
-    // and the `link.exe` will be pointed to `MSVC` version rather than the `MSYS2` version.
-    icu4c_config.env(
-      "PATH",
-      format!("{};c:/msys64/usr/bin", env::var("PATH").unwrap()),
-    );
-  } else {
+  if !cfg!(target_os = "windows") {
     icu4c_config.env("CC", "clang").env("CXX", "clang++");
   }
   icu4c_config

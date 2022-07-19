@@ -63,6 +63,11 @@ jobs:
           C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
         if: matrix.settings.os == 'windows-latest'
 
+      - name: Set MSYS path
+        run: echo "c:/msys64/usr/bin" >> $GITHUB_PATH
+        shell: bash
+        if: matrix.settings.os == 'windows-latest'
+
       - name: Build JavaScriptCore
         run: |
           cargo xtask build
