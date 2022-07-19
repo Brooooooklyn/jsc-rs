@@ -28,83 +28,88 @@ jobs:
     runs-on: ${{ matrix.settings.os }}
     name: Build ${{ matrix.settings.target }}
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          target: ${{ matrix.os.target }}
-          toolchain: stable
-        if: ${{ !matrix.settings.docker }}
-
-      - name: Cache cargo registry
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ matrix.settings.target }}-cargo-cache
-
-      - name: Install tools on macOS
-        run: brew install ninja
-        if: matrix.settings.os == 'macos-latest'
-
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest
-        if: matrix.settings.os == 'macos-latest'
-
-      - name: Install tools on Windows
-        run: |
-          choco install llvm ninja -y
-          which clang-cl
-          C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
-        if: matrix.settings.os == 'windows-latest'
-
-      - name: Build JavaScriptCore
-        run: |
-          cargo xtask build
-          cargo build --bin runtime --release
-          cp target/release/runtime ./jscc
-        if: matrix.settings.os == 'macos-latest'
-
-      - name: Build JavaScriptCore
-        shell: cmd
-        run: |
+      - run: |
           call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-          cargo xtask build
-          cargo build --bin runtime --release
-          cp target/release/runtime.exe ./jscc.exe
-        if: matrix.settings.os == 'windows-latest'
-        env:
-          GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
+          ls -R "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC"
+          which link.exe
+        shell: cmd
+      # - uses: actions/checkout@v3
+      #   with:
+      #     submodules: true
 
-      - name: Build JavaScriptCore in docker
-        uses: addnab/docker-run-action@v3
-        if: ${{ matrix.settings.docker }}
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jscc
+      # - name: Install Rust
+      #   uses: actions-rs/toolchain@v1
+      #   with:
+      #     target: ${{ matrix.os.target }}
+      #     toolchain: stable
+      #   if: ${{ !matrix.settings.docker }}
 
-      - name: Cat CMake error log
-        if: ${{ failure() }}
-        run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
+      # - name: Cache cargo registry
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       ~/.cargo/registry
+      #       ~/.cargo/git
+      #     key: ${{ matrix.settings.target }}-cargo-cache
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: bin-${{ matrix.settings.target }}
-          path: jscc
-          if-no-files-found: error
-        if: matrix.settings.os != 'windows-latest'
+      # - name: Install tools on macOS
+      #   run: brew install ninja
+      #   if: matrix.settings.os == 'macos-latest'
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: bin-${{ matrix.settings.target }}
-          path: jscc.exe
-          if-no-files-found: error
-        if: matrix.settings.os == 'windows-latest'
+      # - uses: maxim-lobanov/setup-xcode@v1
+      #   with:
+      #     xcode-version: latest
+      #   if: matrix.settings.os == 'macos-latest'
+
+      # - name: Install tools on Windows
+      #   run: |
+      #     choco install ninja -y
+      #     which clang-cl
+      #     C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
+      #   if: matrix.settings.os == 'windows-latest'
+
+      # - name: Build JavaScriptCore
+      #   run: |
+      #     cargo xtask build
+      #     cargo build --bin runtime --release
+      #     cp target/release/runtime ./jscc
+      #   if: matrix.settings.os == 'macos-latest'
+
+      # - name: Build JavaScriptCore
+      #   shell: cmd
+      #   run: |
+      #     call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+      #     cargo xtask build
+      #     cargo build --bin runtime --release
+      #     cp target/release/runtime.exe ./jscc.exe
+      #   if: matrix.settings.os == 'windows-latest'
+      #   env:
+      #     GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
+
+      # - name: Build JavaScriptCore in docker
+      #   uses: addnab/docker-run-action@v3
+      #   if: ${{ matrix.settings.docker }}
+      #   with:
+      #     image: ${{ matrix.settings.docker }}
+      #     options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
+      #     run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jscc
+
+      # - name: Cat CMake error log
+      #   if: ${{ failure() }}
+      #   run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
+
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: bin-${{ matrix.settings.target }}
+      #     path: jscc
+      #     if-no-files-found: error
+      #   if: matrix.settings.os != 'windows-latest'
+
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: bin-${{ matrix.settings.target }}
+      #     path: jscc.exe
+      #     if-no-files-found: error
+      #   if: matrix.settings.os == 'windows-latest'
