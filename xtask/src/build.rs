@@ -90,7 +90,12 @@ struct JSCoreBuildConfig {
 }
 
 fn build_icu(icu4c_dir: PathBuf) {
-  let mut icu4c_config = Command::new("sh");
+  let sh_bin = if cfg!(target_os = "windows") {
+    env::var("GNU_SH_PATH").unwrap_or_else(|_| "C:/msys64/usr/bin/sh.exe".to_string())
+  } else {
+    "sh".to_owned()
+  };
+  let mut icu4c_config = Command::new(&sh_bin);
   icu4c_config.arg("-c");
   icu4c_config.arg(&format!(
     "./runConfigureICU {} --enable-static=yes --enable-shared=no --with-data-packaging=static --prefix={} {}",
@@ -109,7 +114,15 @@ fn build_icu(icu4c_dir: PathBuf) {
     }
   ));
 
-  if !cfg!(target_os = "windows") {
+  if cfg!(target_os = "windows") {
+    // On Windows, we need to set the PATH environment variable to include the MSYS2 bin directory.
+    // So that the `c:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.32.31326/bin/HostX64/x64` will occur before `/usr/bin` in `sh.exe` env.
+    // and the `link.exe` will be pointed to `MSVC` version rather than the `MSYS2` version.
+    icu4c_config.env(
+      "PATH",
+      format!("{};c:/msys64/usr/bin", env::var("PATH").unwrap()),
+    );
+  } else {
     icu4c_config.env("CC", "clang").env("CXX", "clang++");
   }
   icu4c_config

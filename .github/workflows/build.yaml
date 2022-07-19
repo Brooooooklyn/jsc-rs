@@ -74,15 +74,13 @@ jobs:
         shell: cmd
         run: |
           call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-          which link
-          link --version
           cargo xtask build
-          cat icu/icu4c/source/config.log
           cargo build --bin runtime --release
           cp target/release/runtime.exe ./jscc.exe
         if: matrix.settings.os == 'windows-latest'
         env:
           GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
+          GNU_SH_PATH: 'c:/msys64/usr/bin/sh.exe'
 
       - name: Build JavaScriptCore in docker
         uses: addnab/docker-run-action@v3
