@@ -14,13 +14,15 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - os: macos-latest
-            target: x86_64-apple-darwin
-          - os: macos-latest
-            target: aarch64-apple-darwin
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
+          # - os: macos-latest
+          #   target: x86_64-apple-darwin
+          # - os: macos-latest
+          #   target: aarch64-apple-darwin
+          # - os: ubuntu-latest
+          #   target: x86_64-unknown-linux-gnu
+          #   docker: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.settings.os }}
     name: Build ${{ matrix.settings.target }}
     steps:
@@ -51,37 +53,44 @@ jobs:
           xcode-version: latest
         if: matrix.settings.os == 'macos-latest'
 
-      - name: Build JavaScriptCore
+      - name: Install tools on macOS
         run: |
-          cargo xtask build
-          cargo build --bin runtime --release
-          cp target/release/runtime ./jsc
-        if: ${{ !matrix.settings.docker }}
-
-      - name: Build JavaScriptCore in docker
-        uses: addnab/docker-run-action@v3
-        if: ${{ matrix.settings.docker }}
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jsc
-
-      - name: Cat CMake error log
-        if: ${{ failure() }}
-        run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: bin-${{ matrix.settings.target }}
-          path: jsc
-          if-no-files-found: error
-        if: matrix.settings.os != 'windows-latest'
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: bin-${{ matrix.settings.target }}
-          path: jsc.exe
-          if-no-files-found: error
+          ls C:
+          ls -R C:\msys64
+          choco install llvm ninja -y
         if: matrix.settings.os == 'windows-latest'
+
+      # - name: Build JavaScriptCore
+      #   run: |
+      #     cargo xtask build
+      #     cargo build --bin runtime --release
+      #     cp target/release/runtime ./jsc
+      #   if: ${{ !matrix.settings.docker }}
+
+      # - name: Build JavaScriptCore in docker
+      #   uses: addnab/docker-run-action@v3
+      #   if: ${{ matrix.settings.docker }}
+      #   with:
+      #     image: ${{ matrix.settings.docker }}
+      #     options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
+      #     run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jsc
+
+      # - name: Cat CMake error log
+      #   if: ${{ failure() }}
+      #   run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
+
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: bin-${{ matrix.settings.target }}
+      #     path: jsc
+      #     if-no-files-found: error
+      #   if: matrix.settings.os != 'windows-latest'
+
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: bin-${{ matrix.settings.target }}
+      #     path: jsc.exe
+      #     if-no-files-found: error
+      #   if: matrix.settings.os == 'windows-latest'
