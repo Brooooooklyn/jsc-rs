@@ -90,7 +90,16 @@ struct JSCoreBuildConfig {
 }
 
 fn build_icu(icu4c_dir: PathBuf) {
-  let mut icu4c_config = Command::new("sh");
+  let sh_bin = if cfg!(target_os = "windows") {
+    env::var("GNU_SH_PATH").unwrap_or_else(|_| "C:/msys64/usr/bin/sh.exe".to_string())
+  } else {
+    "sh".to_owned()
+  };
+  let mut icu4c_config = Command::new(&sh_bin);
+  #[cfg(target_os = "windows")]
+  {
+    icu4c_config.arg("--noprofile").arg("--norc");
+  }
   icu4c_config.arg("-c");
   icu4c_config.arg(&format!(
     "./runConfigureICU {} --enable-static=yes --enable-shared=no --with-data-packaging=static --prefix={} {}",
@@ -144,11 +153,11 @@ fn build_icu(icu4c_dir: PathBuf) {
   assert_command_success(icu4c_config, "config icu4c failed");
   let cpus = num_cpus::get();
   let make_program = if cfg!(target_os = "windows") {
-    "C:/tools/msys64/usr/bin/make"
+    env::var("GNU_MAKE_PATH").unwrap_or("C:/msys64/usr/bin/make.exe".to_string())
   } else {
-    "make"
+    "make".to_owned()
   };
-  let mut make_icu4c = Command::new(make_program);
+  let mut make_icu4c = Command::new(&make_program);
   make_icu4c
     .arg("-j")
     .arg(&format!("{}", cpus))
@@ -157,7 +166,7 @@ fn build_icu(icu4c_dir: PathBuf) {
     .stdin(Stdio::inherit())
     .stdout(Stdio::inherit());
   assert_command_success(make_icu4c, "build icu4c failed");
-  let mut install_icu4c_command = Command::new(make_program);
+  let mut install_icu4c_command = Command::new(&make_program);
   install_icu4c_command
     .arg("install")
     .current_dir(icu4c_dir.clone())
