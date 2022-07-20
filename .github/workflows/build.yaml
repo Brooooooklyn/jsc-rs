@@ -72,7 +72,9 @@ jobs:
         shell: cmd
         run: |
           call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsall.bat" x64 -vcvars_ver=14.16.27023
+          sh -c "which cl"
           cargo xtask build
+          cat icu/icu4c/source/config.log
           cargo build --bin tyr --release
           cp target/release/tyr.exe ./tyr-bin.exe
         if: matrix.settings.os == 'windows-latest'
