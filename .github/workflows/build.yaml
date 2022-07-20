@@ -82,9 +82,11 @@ jobs:
         if: matrix.settings.os == 'windows-latest'
 
       - name: Build JavaScriptCore
+        shell: cmd
         run: |
           cargo xtask build
           cargo build --bin tyr --release
+          cat icu/icu4c/source/config.log
           cp target/release/tyr.exe ./tyr-bin.exe
         if: matrix.settings.os == 'windows-latest'
         env:
