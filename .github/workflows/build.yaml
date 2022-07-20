@@ -63,22 +63,15 @@ jobs:
           C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
         if: matrix.settings.os == 'windows-latest'
 
-      - name: Set MSYS path
-        run: echo "c:/msys64/usr/bin" >> $GITHUB_PATH
-        shell: bash
-        if: matrix.settings.os == 'windows-latest'
-
-      - name: Build JavaScriptCore
-        run: |
-          cargo xtask build
-          cargo build --bin tyr --release
-          cp target/release/tyr ./tyr-bin
-        if: matrix.settings.os == 'macos-latest'
-
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
           toolset: '14.16.27023'
+        if: matrix.settings.os == 'windows-latest'
+
+      - name: Set MSYS path
+        run: echo "c:/msys64/usr/bin" >> $GITHUB_PATH
+        shell: bash
         if: matrix.settings.os == 'windows-latest'
 
       - name: Build JavaScriptCore
@@ -92,6 +85,13 @@ jobs:
         env:
           GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
           GNU_SH_PATH: 'c:/msys64/usr/bin/sh.exe'
+
+      - name: Build JavaScriptCore
+        run: |
+          cargo xtask build
+          cargo build --bin tyr --release
+          cp target/release/tyr ./tyr-bin
+        if: matrix.settings.os == 'macos-latest'
 
       - name: Build JavaScriptCore in docker
         uses: addnab/docker-run-action@v3
