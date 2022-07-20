@@ -96,6 +96,10 @@ fn build_icu(icu4c_dir: PathBuf) {
     "sh".to_owned()
   };
   let mut icu4c_config = Command::new(&sh_bin);
+  #[cfg(target_os = "windows")]
+  {
+    icu4c_config.arg("--noprofile").arg("--norc");
+  }
   icu4c_config.arg("-c");
   icu4c_config.arg(&format!(
     "./runConfigureICU {} --enable-static=yes --enable-shared=no --with-data-packaging=static --prefix={} {}",
