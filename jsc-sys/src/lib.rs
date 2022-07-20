@@ -1,3 +1,4 @@
+#[cfg(not(target_os = "windows"))]
 extern crate compiler_builtins;
 
 mod binding;

@@ -2,3 +2,7 @@
 	path = WebKit
 	url = git@github.com:WebKit/WebKit.git
 	shallow = true
+[submodule "icu"]
+	path = icu
+	url = git@github.com:unicode-org/icu.git
+  shallow = true

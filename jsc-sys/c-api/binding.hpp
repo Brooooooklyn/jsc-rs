@@ -1,4 +1,9 @@
-#include <JavaScriptCore/runtime/JSExportMacros.h>
+#if defined(_MSC_VER)
+#define NOMINMAX // Prevent windows.h from defining min and max macros.
+#include <Windows.h>
+#endif
+
+#include <PrivateHeaders/JavaScriptCore/JSExportMacros.h>
 #include <PrivateHeaders/JavaScriptCore/ArrayBuffer.h>
 
 typedef struct jsc_arraybuffer jsc_arraybuffer;

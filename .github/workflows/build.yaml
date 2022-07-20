@@ -1,3 +1,5 @@
+name: Build
+
 on:
   push:
     branches: [main]
@@ -18,6 +20,11 @@ jobs:
             target: x86_64-apple-darwin
           - os: macos-latest
             target: aarch64-apple-darwin
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            docker: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.settings.os }}
     name: Build ${{ matrix.settings.target }}
     steps:
@@ -25,10 +32,12 @@ jobs:
         with:
           submodules: true
 
-      - name: Install target
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           target: ${{ matrix.os.target }}
+          toolchain: stable
+        if: ${{ !matrix.settings.docker }}
 
       - name: Cache cargo registry
         uses: actions/cache@v3
@@ -47,12 +56,63 @@ jobs:
           xcode-version: latest
         if: matrix.settings.os == 'macos-latest'
 
+      - name: Install tools on Windows
+        run: |
+          choco install ninja -y
+          which clang-cl
+          C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
+        if: matrix.settings.os == 'windows-latest'
+
+      - name: Set MSYS path
+        run: echo "c:/msys64/usr/bin" >> $GITHUB_PATH
+        shell: bash
+        if: matrix.settings.os == 'windows-latest'
+
       - name: Build JavaScriptCore
-        run: cargo xtask build
+        shell: cmd
+        run: |
+          call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsall.bat" x64 -vcvars_ver=14.29.30133
+          sh -c "which cl"
+          cargo xtask build
+          cat icu/icu4c/source/config.log
+          cargo build --bin tyr --release
+          cp target/release/tyr.exe ./tyr-bin.exe
+        if: matrix.settings.os == 'windows-latest'
+        env:
+          GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
+          GNU_SH_PATH: 'c:/msys64/usr/bin/sh.exe'
+
+      - name: Build JavaScriptCore
+        run: |
+          cargo xtask build
+          cargo build --bin tyr --release
+          cp target/release/tyr ./tyr-bin
+        if: matrix.settings.os == 'macos-latest'
+
+      - name: Build JavaScriptCore in docker
+        uses: addnab/docker-run-action@v3
+        if: ${{ matrix.settings.docker }}
+        with:
+          image: ${{ matrix.settings.docker }}
+          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
+          run: cargo xtask build && cargo build --bin tyr --release && cp target/x86_64-unknown-linux-gnu/release/tyr ./tyr-bin
 
       - name: Cat CMake error log
         if: ${{ failure() }}
         run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
 
-      - name: Run binary
-        run: cargo run --bin runtime
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ matrix.settings.target }}
+          path: tyr-bin
+          if-no-files-found: error
+        if: matrix.settings.os != 'windows-latest'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ matrix.settings.target }}
+          path: tyr-bin.exe
+          if-no-files-found: error
+        if: matrix.settings.os == 'windows-latest'
