@@ -23,7 +23,7 @@ jobs:
           # - os: ubuntu-latest
           #   target: x86_64-unknown-linux-gnu
           #   docker: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
-          - os: windows-latest
+          - os: windows-2019
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.settings.os }}
     name: Build ${{ matrix.settings.target }}
@@ -61,23 +61,23 @@ jobs:
           choco install ninja -y
           which clang-cl
           C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
-        if: matrix.settings.os == 'windows-latest'
+        if: matrix.settings.os == 'windows-2019'
 
       - name: Set MSYS path
         run: echo "c:/msys64/usr/bin" >> $GITHUB_PATH
         shell: bash
-        if: matrix.settings.os == 'windows-latest'
+        if: matrix.settings.os == 'windows-2019'
 
       - name: Build JavaScriptCore
         shell: cmd
         run: |
-          call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsall.bat" x64 -vcvars_ver=14.29.30133
+          call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           sh -c "which cl"
           cargo xtask build
           cat icu/icu4c/source/config.log
           cargo build --bin tyr --release
           cp target/release/tyr.exe ./tyr-bin.exe
-        if: matrix.settings.os == 'windows-latest'
+        if: matrix.settings.os == 'windows-2019'
         env:
           GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
           GNU_SH_PATH: 'c:/msys64/usr/bin/sh.exe'
@@ -107,7 +107,7 @@ jobs:
           name: bin-${{ matrix.settings.target }}
           path: tyr-bin
           if-no-files-found: error
-        if: matrix.settings.os != 'windows-latest'
+        if: matrix.settings.os != 'windows-2019'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -115,4 +115,4 @@ jobs:
           name: bin-${{ matrix.settings.target }}
           path: tyr-bin.exe
           if-no-files-found: error
-        if: matrix.settings.os == 'windows-latest'
+        if: matrix.settings.os == 'windows-2019'
