@@ -71,17 +71,21 @@ jobs:
       - name: Build JavaScriptCore
         run: |
           cargo xtask build
-          cargo build --bin runtime --release
-          cp target/release/runtime ./jscc
+          cargo build --bin tyr --release
+          cp target/release/tyr ./tyr-bin
         if: matrix.settings.os == 'macos-latest'
 
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+          toolset: '14.16.27023'
+        if: matrix.settings.os == 'windows-latest'
+
       - name: Build JavaScriptCore
-        shell: cmd
         run: |
-          call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           cargo xtask build
-          cargo build --bin runtime --release
-          cp target/release/runtime.exe ./jscc.exe
+          cargo build --bin tyr --release
+          cp target/release/tyr.exe ./tyr-bin.exe
         if: matrix.settings.os == 'windows-latest'
         env:
           GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
@@ -93,7 +97,7 @@ jobs:
         with:
           image: ${{ matrix.settings.docker }}
           options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: cargo xtask build && cargo build --bin runtime --release && cp target/x86_64-unknown-linux-gnu/release/runtime ./jscc
+          run: cargo xtask build && cargo build --bin tyr --release && cp target/x86_64-unknown-linux-gnu/release/tyr ./tyr-bin
 
       - name: Cat CMake error log
         if: ${{ failure() }}
@@ -103,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: bin-${{ matrix.settings.target }}
-          path: jscc
+          path: tyr-bin
           if-no-files-found: error
         if: matrix.settings.os != 'windows-latest'
 
@@ -111,6 +115,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: bin-${{ matrix.settings.target }}
-          path: jscc.exe
+          path: tyr-bin.exe
           if-no-files-found: error
         if: matrix.settings.os == 'windows-latest'
