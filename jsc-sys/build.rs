@@ -165,6 +165,10 @@ fn main() {
       let xcode_sdk_path = String::from_utf8_lossy(xcrun_output.as_slice())
         .trim()
         .to_owned();
+      static LOW_LEVEL_INTERPRETER_LIB: &str = "libLowLevelInterpreterLib.a";
+      if jsc_lib_dir_path.join(LOW_LEVEL_INTERPRETER_LIB).exists() {
+        println!("cargo:rustc-link-lib=LowLevelInterpreterLib");
+      }
       println!("cargo:rustc-link-search={}", xcode_sdk_path);
       println!("cargo:rustc-link-lib=c++");
       println!("cargo:rustc-link-lib=icucore");
