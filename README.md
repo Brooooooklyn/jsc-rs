@@ -3,6 +3,7 @@
 Tyr is a simple runtime for JavaScript and TypeScript that uses JavaScriptCore and is built in Rust.
 
 [![JavaScriptCore Version](https://img.shields.io/badge/JavaScriptCore-wpewebkit%2F2.36.4-hotpink)](https://github.com/WebKit/WebKit/releases/tag/wpewebkit-2.36.4)
+[![ICU Version](https://img.shields.io/badge/ICU-71.1-green)](https://github.com/unicode-org/icu/releases/tag/release-71-1)
 
 ## Support Matrix
 

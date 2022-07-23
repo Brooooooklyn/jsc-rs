@@ -44,10 +44,13 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
       set_system_cc: true,
       self_build_icu: true,
       extra_cxx_flag: format!(
-        "-fuse-ld=lld -stdlib=libc++ -I{} -I{} -I/usr/lib/llvm-14/include/c++/v1 -L/usr/lib/llvm-14/lib -L{}",
-        icu4c_dir.join("common").to_str().unwrap(),
-        icu4c_dir.join("i18n").to_str().unwrap(),
-        icu4c_dir.join("lib").to_str().unwrap(),
+        "-fuse-ld=lld -stdlib=libc++ -I{} -I/usr/lib/llvm-14/include/c++/v1 -L/usr/lib/llvm-14/lib",
+        icu4c_dir
+          .parent()
+          .unwrap()
+          .join("include")
+          .to_str()
+          .unwrap(),
       ),
       ..Default::default()
     },

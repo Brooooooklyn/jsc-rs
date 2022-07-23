@@ -8,3 +8,9 @@ edition = "2021"
 [dependencies]
 clap = { version = "3", features = ["derive"] }
 num_cpus = "1"
+octorust = "0.1"
+reqwest = "0.11"
+tar = "0.4"
+toml = { version = "0.5" }
+serde = { version = "1", features = ["derive"] }
+tokio = "1"

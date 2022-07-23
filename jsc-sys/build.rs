@@ -11,13 +11,18 @@ fn main() {
   let out_dir = env::var("OUT_DIR").unwrap();
   println!("cargo:rustc-link-search={}", &out_dir);
   let current_dir = env::current_dir().expect("get current_dir failed");
+  let webkit_output_dir = current_dir.parent().unwrap().join("WebKit/WebKitBuild");
   let jsc_lib_dir = env::var("JSC_LIB_DIR").unwrap_or_else(|_| {
-    format!(
-      "WebKit/WebKitBuild/{}",
-      if is_windows { "lib64" } else { "lib" }
-    )
+    {
+      if is_windows {
+        "lib64"
+      } else {
+        "lib"
+      }
+    }
+    .to_owned()
   });
-  let jsc_lib_dir_path = current_dir.parent().unwrap().join(&jsc_lib_dir);
+  let jsc_lib_dir_path = webkit_output_dir.join(&jsc_lib_dir);
   // WebKit/WebKitBuild/lib/libJavaScriptCore.a
   println!("cargo:rustc-link-search={}", jsc_lib_dir_path.display());
   let mut build = cc::Build::new();
@@ -25,21 +30,32 @@ fn main() {
     .file("c-api/binding.cpp")
     .cpp(true)
     .include("c-api")
-    .include("../WebKit/WebKitBuild/JavaScriptCore")
-    .include("../WebKit/WebKitBuild/WTF/Headers")
-    .include("../WebKit/WebKitBuild/bmalloc/Headers")
+    .include(
+      webkit_output_dir
+        .join("JavaScriptCore")
+        .to_str()
+        .unwrap()
+        .replace(r#"\"#, "/"),
+    )
+    .include(
+      webkit_output_dir
+        .join("WTF/Headers")
+        .to_str()
+        .unwrap()
+        .replace(r#"\"#, "/"),
+    )
+    .include(
+      webkit_output_dir
+        .join("bmalloc/Headers")
+        .to_str()
+        .unwrap()
+        .replace(r#"\"#, "/"),
+    )
     .cargo_metadata(false);
-  let icu_common_dir = current_dir
+  let icu_header_dir = current_dir
     .parent()
     .unwrap()
-    .join("icu/icu4c/source/common")
-    .to_str()
-    .unwrap()
-    .to_owned();
-  let icu_i18n_dir = current_dir
-    .parent()
-    .unwrap()
-    .join("icu/icu4c/source/i18n")
+    .join("icu/icu4c/include")
     .to_str()
     .unwrap()
     .to_owned();
@@ -115,15 +131,9 @@ fn main() {
       "/wd5054", //operator 'operator-name': deprecated between enumerations of different types
       "/wd5055", //operator 'operator-name': deprecated between enumerations and floating-point types
     ];
-    build.flag("/std:c++20").flag(&format!(
-      "-I{}",
-      current_dir
-        .parent()
-        .unwrap()
-        .join("icu/icu4c/include")
-        .to_str()
-        .unwrap()
-    ));
+    build
+      .flag("/std:c++20")
+      .flag(&format!("-I{}", &icu_header_dir));
     for flag in MSVC_FLAGS.iter() {
       build.flag(*flag);
     }
@@ -162,14 +172,13 @@ fn main() {
       build
         .cpp_set_stdlib("c++")
         .compiler("clang++")
-        .flag(&format!("-I{}", &icu_common_dir))
-        .flag(&format!("-I{}", &icu_i18n_dir));
+        .flag(&format!("-I{}", &icu_header_dir));
       println!(
         "cargo:rustc-link-search={}",
         current_dir
           .parent()
           .unwrap()
-          .join("icu/icu4c/source/lib")
+          .join("icu/icu4c/lib")
           .to_str()
           .unwrap()
       );

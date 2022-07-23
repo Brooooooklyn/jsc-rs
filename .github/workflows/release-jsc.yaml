@@ -1,12 +1,10 @@
-name: Build
+name: Release JavaScriptCore and ICU
 
 on:
   push:
-    branches: [main]
+    branches: [release]
     tags-ignore:
       - '**'
-  pull_request:
-
 env:
   MACOSX_DEPLOYMENT_TARGET: '10.15'
 
@@ -45,6 +43,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            target
           key: ${{ matrix.settings.target }}-cargo-cache
 
       - name: Install tools on macOS
@@ -77,42 +76,40 @@ jobs:
           cat icu/icu4c/source/config.log
           cargo build --bin tyr --release
           cp target/release/tyr.exe ./tyr-bin.exe
+          cargo xtask release --target ${{ matrix.settings.target }}
         if: matrix.settings.os == 'windows-latest'
         env:
           GNU_MAKE_PATH: 'c:/msys64/usr/bin/make.exe'
           GNU_SH_PATH: 'c:/msys64/usr/bin/sh.exe'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build JavaScriptCore
         run: |
           cargo xtask build
           cargo build --bin tyr --release
           cp target/release/tyr ./tyr-bin
+          cargo xtask release --target ${{ matrix.settings.target }}
         if: matrix.settings.os == 'macos-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build JavaScriptCore in docker
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           image: ${{ matrix.settings.docker }}
-          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/root/.cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/root/.cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/root/.cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: cargo xtask build && cargo build --bin tyr --release && cp target/x86_64-unknown-linux-gnu/release/tyr ./tyr-bin
+          options: '--user 0:0 -e GITHUB_TOKEN -v ${{ github.workspace }}:/build -w /build'
+          run: >-
+            pwd &&
+            rustup toolchain install $(cat ./rust-toolchain) &&
+            rustup target add x86_64-unknown-linux-gnu &&
+            cargo xtask build &&
+            cargo build --bin tyr --release &&
+            cp target/${{ matrix.settings.target }}/release/tyr ./tyr-bin &&
+            cargo xtask release --target ${{ matrix.settings.target }}
 
       - name: Cat CMake error log
         if: ${{ failure() }}
         run: cat ./WebKit/WebKitBuild/CMakeFiles/CMakeError.log
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: bin-${{ matrix.settings.target }}
-          path: tyr-bin
-          if-no-files-found: error
-        if: matrix.settings.os != 'windows-latest'
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: bin-${{ matrix.settings.target }}
-          path: tyr-bin.exe
-          if-no-files-found: error
-        if: matrix.settings.os == 'windows-latest'
