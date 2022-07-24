@@ -4,4 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1"
+bitflags = "1"
 jsc-sys = { path = "../jsc-sys", version = "0.0.0" }
+thiserror = "1"
