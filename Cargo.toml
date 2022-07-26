@@ -4,6 +4,6 @@ members = ["jsc", "jsc-sys", "tyr", "node-api", "xtask"]
 [profile.release]
 lto = true
 
-[external]
+[workspace.metadata]
 icu = { tag = "release-71-1" }
-WebKit = { tag = "wpewebkit-2.36.4" }
+WebKit = { tag = "webkitgtk-2.37.1" }

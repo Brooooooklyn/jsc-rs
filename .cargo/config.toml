@@ -1,2 +1,10 @@
 [alias]
 xtask = "run --package xtask --"
+
+[target.aarch64-unknown-linux-gnu]
+rustflags = [
+  "-C", "link-args=-fuse-ld=lld",
+  "-C", "link-args=--target=aarch64-unknown-linux-gnu",
+  "-C", "link-args=-march=armv8-a",
+  "-C", "link-args=--sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot",
+]

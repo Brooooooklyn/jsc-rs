@@ -40,3 +40,5 @@ Temporary Items
 
 .vscode
 icu/icu4c/source/include
+lib
+icu-linux-aarch64

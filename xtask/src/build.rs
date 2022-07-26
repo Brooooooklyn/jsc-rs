@@ -5,6 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
+static AARCH64_LINUX_GNU_LD_FLAG: &str = "-L/usr/aarch64-unknown-linux-gnu/lib/llvm-14/lib -L/usr/aarch64-unknown-linux-gnu/lib -L/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/lib -L/usr/aarch64-unknown-linux-gnu/lib/gcc/aarch64-unknown-linux-gnu/4.8.5";
+
 pub fn build() {
   let current_dir = env::current_dir().expect("get current_dir failed");
   let cmake_build_dir = current_dir.join("WebKit/WebKitBuild");
@@ -38,7 +40,19 @@ fn build_osx(cmake_build_dir: PathBuf) {
 
 #[cfg(target_os = "linux")]
 fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
-  build_icu(icu4c_dir.clone());
+  let is_cross_aarch64_gnu =
+    env::var("CARGO_BUILD_TARGET") == Ok("aarch64-unknown-linux-gnu".to_owned());
+  build_icu(icu4c_dir.clone(), is_cross_aarch64_gnu);
+  let cross_flag = if is_cross_aarch64_gnu {
+    "-I/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot"
+  } else {
+    ""
+  };
+  let libcpp_flag = if is_cross_aarch64_gnu {
+    format!("-march=armv8-a --target=aarch64-unknown-linux-gnu --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot")
+  } else {
+    "-I/usr/lib/llvm-14/include/c++/v1 -L/usr/lib/llvm-14/lib".to_owned()
+  };
   build_js_core(
     cmake_build_dir,
     JSCoreBuildConfig {
@@ -46,7 +60,7 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
       set_system_cc: true,
       self_build_icu: true,
       extra_cxx_flag: format!(
-        "-fuse-ld=lld -stdlib=libc++ -I{} -I/usr/lib/llvm-14/include/c++/v1 -L/usr/lib/llvm-14/lib",
+        "-fuse-ld=lld -stdlib=libc++ -I{} {libcpp_flag}",
         icu4c_dir
           .parent()
           .unwrap()
@@ -54,14 +68,15 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
           .to_str()
           .unwrap(),
       ),
+      extra_c_flag: format!("-fuse-ld=lld {libcpp_flag} {AARCH64_LINUX_GNU_LD_FLAG}"),
       ..Default::default()
     },
-  )
+  );
 }
 
 #[cfg(target_os = "windows")]
 fn build_windows(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
-  build_icu(icu4c_dir.clone());
+  build_icu(icu4c_dir.clone(), false);
   let include_flags = format!(
     "-I{}",
     icu4c_dir
@@ -94,21 +109,29 @@ struct JSCoreBuildConfig {
   extra_cxx_flag: String,
 }
 
-fn build_icu(icu4c_dir: PathBuf) {
+fn build_icu(icu4c_dir: PathBuf, is_cross_aarch64_gnu: bool) {
+  if is_cross_aarch64_gnu {
+    build_icu(icu4c_dir.clone(), false);
+  }
   let sh_bin = if cfg!(target_os = "windows") {
     env::var("GNU_SH_PATH").unwrap_or_else(|_| "C:/msys64/usr/bin/sh.exe".to_string())
   } else {
     "sh".to_owned()
   };
   let mut icu4c_config = Command::new(&sh_bin);
+  let cross_build_dir = env::current_dir().unwrap().join(ICU_AARCH64_DIR);
+  static ICU_AARCH64_DIR: &str = "icu-linux-aarch64";
   #[cfg(target_os = "windows")]
   {
     icu4c_config.arg("--noprofile").arg("--norc");
   }
   icu4c_config.arg("-c");
   icu4c_config.arg(&format!(
-    "./runConfigureICU {} --enable-static=yes --enable-shared=no --with-data-packaging=static --prefix={} {}",
-    if cfg!(target_os = "linux") {
+    "{} {} --enable-static=yes --enable-shared=no --with-data-packaging=static --prefix={} {}",
+    icu4c_dir.join(if is_cross_aarch64_gnu { "configure" } else { "runConfigureICU" }).to_str().unwrap().replace(r#"\"#, "/"),
+    if is_cross_aarch64_gnu {
+      ""
+    } else if cfg!(target_os = "linux") {
       "Linux"
     } else if cfg!(target_os = "windows") {
       "MSYS/MSVC"
@@ -118,6 +141,9 @@ fn build_icu(icu4c_dir: PathBuf) {
     icu4c_dir.parent().unwrap().to_str().unwrap().replace(r#"\"#, "/"),
     if cfg!(target_os = "windows") {
       format!("--enable-extras=no --enable-tests=no --enable-tools=no --enable-samples=no --build=x86_64-msvc-mingw64 --host=x86_64-msvc-mingw64")
+    } else if is_cross_aarch64_gnu {
+      fs::create_dir_all(ICU_AARCH64_DIR).expect("Create cross build dir faild");
+      format!("--host=x86_64-pc-linux --build=aarch64-pc-linux --with-cross-build={}", icu4c_dir.display())
     } else {
       String::new()
     }
@@ -126,32 +152,52 @@ fn build_icu(icu4c_dir: PathBuf) {
   if !cfg!(target_os = "windows") {
     icu4c_config.env("CC", "clang").env("CXX", "clang++");
   }
+  let cross_flag;
+  let cross_ld_flag;
+  if is_cross_aarch64_gnu {
+    cross_flag = "-fuse-ld=lld -march=armv8-a --target=aarch64-unknown-linux-gnu -I/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot";
+    cross_ld_flag = AARCH64_LINUX_GNU_LD_FLAG;
+  } else {
+    cross_flag = "";
+    cross_ld_flag = "";
+  };
+  if is_cross_aarch64_gnu {
+    icu4c_config.current_dir(cross_build_dir.clone());
+  } else {
+    icu4c_config.current_dir(icu4c_dir.clone());
+  }
   icu4c_config
     .env(
       "CFLAGS",
       if cfg!(target_os = "windows") {
         "-Gy -MD"
       } else {
-        ""
+        cross_flag
       },
     )
     .env(
       "CXXFLAGS",
       if cfg!(target_os = "windows") {
-        "/std:c++20 -Gy -MD"
+        "/std:c++20 -Gy -MD".to_owned()
+      } else if is_cross_aarch64_gnu {
+        format!("{cross_flag} -std=c++20 -stdlib=libc++")
       } else {
-        "-std=c++20 -stdlib=libc++ -I/usr/lib/llvm-14/include/c++/v1"
+        "-fuse-ld=lld -std=c++20 -stdlib=libc++ -I/usr/lib/llvm-14/include/c++/v1".to_owned()
       },
     )
     .env(
       "LDFLAGS",
       if cfg!(target_os = "windows") {
-        ""
+        String::new()
+      } else if is_cross_aarch64_gnu {
+        format!(
+          "-L/usr/aarch64-unknown-linux-gnu/lib/llvm-14/lib {}",
+          cross_ld_flag
+        )
       } else {
-        "-L/usr/lib/llvm-14/lib"
+        "-L/usr/lib/llvm-14/lib".to_owned()
       },
     )
-    .current_dir(icu4c_dir.clone())
     .stderr(Stdio::inherit())
     .stdin(Stdio::inherit())
     .stdout(Stdio::inherit());
@@ -166,7 +212,11 @@ fn build_icu(icu4c_dir: PathBuf) {
   make_icu4c
     .arg("-j")
     .arg(&format!("{}", cpus))
-    .current_dir(icu4c_dir.clone())
+    .current_dir(if is_cross_aarch64_gnu {
+      cross_build_dir.clone()
+    } else {
+      icu4c_dir.clone()
+    })
     .stderr(Stdio::inherit())
     .stdin(Stdio::inherit())
     .stdout(Stdio::inherit());
@@ -182,6 +232,8 @@ fn build_icu(icu4c_dir: PathBuf) {
 }
 
 fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
+  let is_cross_aarch64_gnu =
+    env::var("CARGO_BUILD_TARGET") == Ok("aarch64-unknown-linux-gnu".to_owned());
   let use_pthread_permission_api_flag = if config.use_pthread_permission_api {
     "-DUSE_PTHREAD_JIT_PERMISSIONS_API=1"
   } else {
@@ -191,6 +243,19 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
     "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15"
   } else {
     ""
+  };
+  let cross_build_flag = if is_cross_aarch64_gnu {
+    let cmake_toolchain_file = env::current_dir()
+      .unwrap()
+      .join("aarch64.cmake")
+      .to_str()
+      .unwrap()
+      .to_owned();
+    format!(
+      r#"-DCMAKE_TOOLCHAIN_FILE={cmake_toolchain_file} -DCMAKE_ADDR2LINE=/usr/bin/llvm-addr2line-14 -DCMAKE_AR=/usr/bin/llvm-ar-14 -DUSE_SYSTEM_MALLOC=ON -DCMAKE_LINKER=lld -DCMAKE_MODULE_LINKER_FLAGS="{AARCH64_LINUX_GNU_LD_FLAG}" -DCMAKE_EXE_LINKER_FLAGS="{AARCH64_LINUX_GNU_LD_FLAG}""#
+    )
+  } else {
+    String::new()
   };
   let mut cmake_config = Command::new("sh");
   let extra_c_flag = &config.extra_c_flag;
@@ -217,7 +282,11 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
         .replace(r#"\"#, "/"),
       env::current_dir()
         .unwrap()
-        .join("icu/icu4c/lib")
+        .join(if is_cross_aarch64_gnu {
+          "icu-linux-aarch64/lib"
+        } else {
+          "icu/icu4c/lib"
+        })
         .to_str()
         .unwrap()
         .replace(r#"\"#, "/")
@@ -262,7 +331,7 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
     -DENABLE_JIT=ON \
     -DCMAKE_C_FLAGS="{c_flags}" \
     -DCMAKE_CXX_FLAGS="{cxx_flags}" \
-    -G Ninja {icu_uc_in_flag} {macos_deploy_target_flag} {icu_flag}
+    -G Ninja {icu_uc_in_flag} {macos_deploy_target_flag} {icu_flag} {cross_build_flag}
   "#,
       )
       .trim()
@@ -273,7 +342,11 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
     .stdin(Stdio::inherit())
     .stdout(Stdio::inherit());
   #[allow(unused)]
-  let icu4c_source = env::current_dir().unwrap().join("icu/icu4c/source");
+  let icu4c_source = env::current_dir().unwrap().join(if is_cross_aarch64_gnu {
+    "icu-linux-aarch64"
+  } else {
+    "icu/icu4c"
+  });
   #[cfg(target_os = "macos")]
   {
     cmake_config.env("MACOSX_DEPLOYMENT_TARGET", "10.15");
@@ -303,5 +376,6 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
 }
 
 fn assert_command_success(mut command: Command, msg: &str) {
+  println!("Run command: {:?}", &command);
   assert!(command.output().expect(msg).status.success(), "{}", msg);
 }

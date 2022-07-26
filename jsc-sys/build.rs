@@ -3,10 +3,13 @@ extern crate cc;
 use std::env;
 use std::process;
 
+static LOW_LEVEL_INTERPRETER_LIB: &str = "libLowLevelInterpreterLib.a";
+
 fn main() {
   println!("cargo:rerun-if-changed=c-api/binding.cpp");
   println!("cargo:rerun-if-changed=c-api/binding.hpp");
   let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+  let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
   let is_windows = target_os == "windows";
   let out_dir = env::var("OUT_DIR").unwrap();
   println!("cargo:rustc-link-search={}", &out_dir);
@@ -165,7 +168,7 @@ fn main() {
       let xcode_sdk_path = String::from_utf8_lossy(xcrun_output.as_slice())
         .trim()
         .to_owned();
-      static LOW_LEVEL_INTERPRETER_LIB: &str = "libLowLevelInterpreterLib.a";
+
       if jsc_lib_dir_path.join(LOW_LEVEL_INTERPRETER_LIB).exists() {
         println!("cargo:rustc-link-lib=LowLevelInterpreterLib");
       }
@@ -177,24 +180,52 @@ fn main() {
         .cpp_set_stdlib("c++")
         .compiler("clang++")
         .flag(&format!("-I{}", &icu_header_dir));
-      println!(
-        "cargo:rustc-link-search={}",
-        current_dir
-          .parent()
-          .unwrap()
-          .join("icu/icu4c/lib")
-          .to_str()
-          .unwrap()
-      );
-      println!("cargo:rustc-link-search=/usr/lib/llvm-14/lib");
-      println!("cargo:rustc-link-search=/usr/lib/gcc/x86_64-linux-gnu/9");
+      match target_arch.as_str() {
+        "x86_64" => {
+          println!("cargo:rustc-link-search=/usr/lib/llvm-14/lib");
+          println!("cargo:rustc-link-search=/usr/lib/gcc/x86_64-linux-gnu/9");
+          println!("cargo:rustc-link-lib=static=atomic");
+          println!(
+            "cargo:rustc-link-search={}",
+            current_dir
+              .parent()
+              .unwrap()
+              .join("icu/icu4c/lib")
+              .to_str()
+              .unwrap()
+          );
+        }
+        "aarch64" => {
+          println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib/llvm-14/lib");
+          println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib");
+          println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/lib");
+          println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib/gcc/aarch64-unknown-linux-gnu/4.8.5");
+          println!(
+            "cargo:rustc-link-search={}",
+            current_dir
+              .parent()
+              .unwrap()
+              .join("icu-linux-aarch64/lib")
+              .to_str()
+              .unwrap()
+          );
+          build
+            .include("/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include")
+            .flag("-DUSE_SYSTEM_MALLOC=1")
+            .flag("--sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot");
+        }
+        _ => {
+          panic!("Unsupported arch {target_arch}");
+        }
+      }
       println!("cargo:rustc-link-lib=static=c++");
-      println!("cargo:rustc-link-lib=static=atomic");
       println!("cargo:rustc-link-lib=static=icudata");
       println!("cargo:rustc-link-lib=static=icuuc");
       println!("cargo:rustc-link-lib=static=icui18n");
     }
-    println!("cargo:rustc-link-lib=static=bmalloc");
+    if jsc_lib_dir_path.join("libbmalloc.a").exists() {
+      println!("cargo:rustc-link-lib=static=bmalloc");
+    }
     println!("cargo:rustc-link-lib=static=WTF");
     println!("cargo:rustc-link-lib=static=JavaScriptCore");
     println!("cargo:rustc-link-lib=static=jscc");

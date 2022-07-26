@@ -21,6 +21,9 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            docker: ghcr.io/brooooooklyn/jsc-rs/linux-builder:aarch64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.settings.os }}
@@ -59,7 +62,8 @@ jobs:
         run: |
           choco install ninja -y
           which clang-cl
-          C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm make"
+          C:/msys64/usr/bin/bash -lc "pacman -Syuu --noconfirm"
+          C:/msys64/usr/bin/bash -lc "pacman -S make --noconfirm"
         if: matrix.settings.os == 'windows-latest'
 
       - name: Set MSYS path
@@ -70,6 +74,7 @@ jobs:
       - name: Build JavaScriptCore
         shell: cmd
         run: |
+          ls -R c:/msys64/usr/bin
           call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsall.bat" x64 -vcvars_ver=14.29.30133
           sh -c "which cl"
           cargo xtask build
@@ -104,11 +109,15 @@ jobs:
           run: >-
             pwd &&
             rustup toolchain install $(cat ./rust-toolchain) &&
-            rustup target add x86_64-unknown-linux-gnu &&
-            cargo xtask build &&
-            cargo build --bin tyr --release &&
+            rustup target add ${{ matrix.settings.target }} &&
+            rm -f /usr/lib/llvm-14/lib/libc++abi.so &&
+            rm -f /usr/aarch64-unknown-linux-gnu/lib/llvm-14/lib/libc++abi.so &&
+            cargo run --bin xtask --target x86_64-unknown-linux-gnu -- build &&
+            ls -R WebKit/WebKitBuild/lib &&
+            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=clang &&
+            cargo build --target ${{ matrix.settings.target }} --bin tyr --release &&
             cp target/${{ matrix.settings.target }}/release/tyr ./tyr-bin &&
-            cargo xtask release --target ${{ matrix.settings.target }}
+            cargo run --bin xtask --target x86_64-unknown-linux-gnu -- release --target ${{ matrix.settings.target }}
 
       - name: Cat CMake error log
         if: ${{ failure() }}
