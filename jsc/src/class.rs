@@ -1,9 +1,7 @@
 use std::ffi::CString;
 use std::ptr;
 
-use jsc_sys::{
-  JSClassCreate, JSClassDefinition, JSClassRef, JSClassRelease, JSClassRetain, JSObjectMake,
-};
+use jsc_sys::{JSClassCreate, JSClassDefinition, JSClassRef, JSClassRelease, JSObjectMake};
 
 use crate::{Context, JscError, Object};
 
@@ -60,7 +58,6 @@ impl ClassDefinition {
     if class_ref.is_null() {
       return Err(JscError::CreateClassError);
     }
-    unsafe { JSClassRetain(class_ref) };
     Ok(Class { inner: class_ref })
   }
 }
