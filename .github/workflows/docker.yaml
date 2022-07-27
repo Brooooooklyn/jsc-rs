@@ -31,7 +31,7 @@ jobs:
           file: linux-x64.Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository }}/linux-builder:x64
+          tags: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
 
       - name: Install latest libc++-dev for cross build
         uses: addnab/docker-run-action@v3
@@ -52,4 +52,4 @@ jobs:
           file: linux-aarch64.Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository }}/linux-builder:aarch64
+          tags: ghcr.io/brooooooklyn/jsc-rs/linux-builder:aarch64
