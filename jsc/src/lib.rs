@@ -3,10 +3,9 @@ use std::ptr;
 
 use jsc_sys::{
   JSContextGetGlobalObject, JSContextGroupCreate, JSContextGroupRef, JSContextGroupRelease,
-  JSContextGroupRetain, JSEvaluateScript, JSGarbageCollect, JSGlobalContextCreateInGroup,
-  JSGlobalContextRef, JSGlobalContextRelease, JSGlobalContextRetain,
-  JSObjectCallAsFunctionCallback, JSObjectMakeFunctionWithCallback, JSStringCreateWithUTF8CString,
-  JSStringRef, JSValueRef,
+  JSEvaluateScript, JSGarbageCollect, JSGlobalContextCreateInGroup, JSGlobalContextRef,
+  JSGlobalContextRelease, JSObjectCallAsFunctionCallback, JSObjectMakeFunctionWithCallback,
+  JSStringCreateWithUTF8CString, JSStringRef, JSValueRef,
 };
 
 mod class;
@@ -40,7 +39,6 @@ impl Context {
     if group.is_null() {
       return Err(JscError::CreateContextGroupError);
     }
-    unsafe { JSContextGroupRetain(group) };
     let inner = unsafe {
       JSGlobalContextCreateInGroup(
         group,
@@ -50,7 +48,6 @@ impl Context {
     if inner.is_null() {
       return Err(JscError::CreateGlobalContextError);
     }
-    unsafe { JSGlobalContextRetain(inner) };
     Ok(Context { group, inner })
   }
 
