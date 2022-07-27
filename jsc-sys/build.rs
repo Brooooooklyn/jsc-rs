@@ -42,6 +42,13 @@ fn main() {
     )
     .include(
       webkit_output_dir
+        .join("JavaScriptCore/Headers")
+        .to_str()
+        .unwrap()
+        .replace(r#"\"#, "/"),
+    )
+    .include(
+      webkit_output_dir
         .join("WTF/Headers")
         .to_str()
         .unwrap()
@@ -154,8 +161,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=sicuin");
     println!("cargo:rustc-link-lib=winmm");
     println!("cargo:rustc-link-lib=shell32");
-    println!("cargo:rustc-link-lib=static=WTF");
     println!("cargo:rustc-link-lib=static=JavaScriptCore");
+    println!("cargo:rustc-link-lib=static=WTF");
     println!("cargo:rustc-link-lib=static=jscc");
   } else {
     build.flag("-std=c++20");
@@ -168,6 +175,8 @@ fn main() {
       let xcode_sdk_path = String::from_utf8_lossy(xcrun_output.as_slice())
         .trim()
         .to_owned();
+
+      build.flag("-DJSC_API_AVAILABLE(...)=");
 
       if jsc_lib_dir_path.join(LOW_LEVEL_INTERPRETER_LIB).exists() {
         println!("cargo:rustc-link-lib=LowLevelInterpreterLib");
