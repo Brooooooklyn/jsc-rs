@@ -6,7 +6,7 @@ on:
     tags-ignore:
       - '**'
   pull_request:
-    
+
 env:
   MACOSX_DEPLOYMENT_TARGET: '10.15'
 
@@ -88,3 +88,96 @@ jobs:
             rustup target add ${{ matrix.settings.target }} &&
             cargo build --bin tyr --target ${{ matrix.settings.target }} --release &&
             cp target/${{ matrix.settings.target }}/release/tyr ./tyr-bin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ matrix.settings.target }}
+          path: tyr-bin
+          if-no-files-found: error
+        if: matrix.settings.os != 'windows-latest'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ matrix.settings.target }}
+          path: tyr-bin.exe
+          if-no-files-found: error
+        if: matrix.settings.os == 'windows-latest'
+
+  tests:
+    runs-on: ${{ matrix.settings.os }}
+    name: Test ${{ matrix.settings.target }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download binary
+        uses: actions/download-artifact@v3
+        with:
+          name: bin-${{ matrix.settings.target }}
+
+      - name: Run tests
+        if: matrix.settings.os != 'windows-latest'
+        run: |
+          chmod 777 tyr-bin
+          ./tyr-bin specs/console.js
+
+      - name: Run tests
+        if: matrix.settings.os == 'windows-latest'
+        run: |
+          icacls tyr-bin.exe
+          ./tyr-bin.exe specs/console.js
+
+  test-linux-centos-7-x64:
+    runs-on: ubuntu-latest
+    name: Test bindings on Linux-x64-glibc-2.17
+    needs:
+      - build
+    container:
+      image: centos:7
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download binary
+        uses: actions/download-artifact@v3
+        with:
+          name: bin-x86_64-unknown-linux-gnu
+
+      - name: Run tests
+        run: |
+          chmod 777 tyr-bin
+          ./tyr-bin specs/console.js
+
+  test-linux-centos-7-aarch64:
+    runs-on: ubuntu-latest
+    name: Test bindings on Linux-aarch64-glibc-2.17
+    needs:
+      - build
+    steps:
+      - run: docker run --rm --privileged multiarch/qemu-user-static:register --reset
+
+      - uses: actions/checkout@v3
+
+      - name: Download binary
+        uses: actions/download-artifact@v3
+        with:
+          name: bin-aarch64-unknown-linux-gnu
+
+      - name: Test bindings
+        uses: addnab/docker-run-action@v3
+        with:
+          image: multiarch/centos:aarch64-clean
+          options: -v ${{ github.workspace }}:/build -w /build
+          run: |
+            chmod 777 tyr-bin
+            ./tyr-bin specs/console.js

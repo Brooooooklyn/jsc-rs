@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use std::ptr;
 
-use jsc_sys::{JSClassCreate, JSClassDefinition, JSClassRef, JSClassRelease, JSObjectMake};
+use jsc_sys::{JSClassCreate, JSClassDefinition, JSClassRef, JSObjectMake};
 
 use crate::{Context, JscError, Object};
 
@@ -77,11 +77,5 @@ impl Class {
 
   pub fn raw(&self) -> JSClassRef {
     self.inner
-  }
-}
-
-impl Drop for Class {
-  fn drop(&mut self) {
-    unsafe { JSClassRelease(self.inner) };
   }
 }
