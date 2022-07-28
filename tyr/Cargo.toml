@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 clap = { version = "3", features = ["derive"] }
+encoding_rs = "0.8"
 jsc = { path = "../jsc", version = "0.0.0" }
 tokio = { version = "1", features = ["full"] }
