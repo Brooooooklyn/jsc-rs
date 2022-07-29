@@ -4,29 +4,38 @@ use std::slice;
 
 use jsc_safe::sys::*;
 
-pub unsafe extern "C" fn console_log(
+use crate::wellknown_property_name;
+
+pub unsafe extern "C" fn log(
   ctx: JSContextRef,
   _function: JSObjectRef,
   _this: JSObjectRef,
   argument_count: usize,
   arguments: *const JSValueRef,
-  _exception: *mut JSValueRef,
+  exception: *mut JSValueRef,
 ) -> JSValueRef {
   let args = slice::from_raw_parts(arguments, argument_count);
   let mut reference_set = HashSet::default();
   args.iter().for_each(|arg| {
-    println!(
-      "{}",
-      serde_json::to_string_pretty(&js_value_to_console(ctx, *arg, &mut reference_set)).unwrap()
-    );
+    let serde_value = js_value_to_console(ctx, *arg, &mut reference_set, exception);
+    match &serde_value {
+      serde_json::Value::String(s) => println!("{s}"),
+      serde_json::Value::Null => println!("null"),
+      serde_json::Value::Bool(b) => println!("{b}"),
+      serde_json::Value::Number(n) => println!("{n}"),
+      serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+        println!("{}", serde_json::to_string_pretty(&serde_value).unwrap())
+      }
+    }
   });
   JSValueMakeUndefined(ctx)
 }
 
-unsafe fn js_value_to_console(
+pub unsafe fn js_value_to_console(
   ctx: JSContextRef,
   value: JSValueRef,
   reference_set: &mut HashSet<JSValueRef>,
+  exception: *mut JSValueRef,
 ) -> serde_json::Value {
   let js_type = JSValueGetType(ctx, value);
   match js_type {
@@ -49,6 +58,24 @@ unsafe fn js_value_to_console(
     }
     5 => {
       reference_set.insert(value);
+      if JSValueIsArray(ctx, value) {
+        let length = JSObjectGetProperty(
+          ctx,
+          value as *mut _,
+          wellknown_property_name::LENGTH.with(|s| *s),
+          exception,
+        );
+        let len = JSValueToNumber(ctx, length, exception) as usize;
+        let mut array = Vec::with_capacity(len);
+        for index in 0..len {
+          let element = JSObjectGetPropertyAtIndex(ctx, value as *mut _, index as u32, exception);
+          let element_value = js_value_to_console(ctx, element, reference_set, exception);
+          reference_set.insert(element);
+          reference_set.insert(value);
+          array.push(element_value);
+        }
+        return serde_json::Value::Array(array);
+      }
       let names_array = JSObjectCopyPropertyNames(ctx, value as *mut _);
       let names_array_length = JSPropertyNameArrayGetCount(names_array);
       let mut value_to_display = serde_json::Value::Object(serde_json::Map::default());
@@ -61,7 +88,7 @@ unsafe fn js_value_to_console(
           value_to_display[name] = serde_json::Value::String("<circular reference>".to_owned());
         } else {
           reference_set.insert(value);
-          value_to_display[name] = js_value_to_console(ctx, value, reference_set);
+          value_to_display[name] = js_value_to_console(ctx, value, reference_set, exception);
         }
       }
       value_to_display
