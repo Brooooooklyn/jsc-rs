@@ -7,7 +7,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
+base64-simd = "0.7"
 clap = { version = "3", features = ["derive"] }
+encoding_rs = "0.8"
 jsc-safe = { path = "../jsc", version = "0.0.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

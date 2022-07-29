@@ -39,6 +39,12 @@ extern "C"
     return toWTFString(wtf_string);
   }
 
+  JSStringRef jsc_string_from_static_rust_str(const char *str)
+  {
+    auto wtf_string = WTF::String::fromUTF8(str);
+    return OpaqueJSString::tryCreate(wtf_string).leakRef();
+  }
+
   void jsc_wtf_string_release(WTFStringImpl *inner)
   {
     WTF::StringImpl::destroy(reinterpret_cast<WTF::StringImpl *>(inner));

@@ -1,4 +1,5 @@
 use std::ffi::CString;
+use std::os::raw::c_char;
 use std::ptr;
 
 use jsc_sys::{JSClassCreate, JSClassDefinition, JSClassRef, JSObjectMake};
@@ -48,17 +49,20 @@ impl ClassDefinition {
     Ok(Self { inner: self.inner })
   }
 
+  pub fn with_c_name(mut self, c_name: *const c_char) -> Self {
+    self.inner.className = c_name;
+    Self { inner: self.inner }
+  }
+
   pub fn with_attribute(mut self, attribute: ClassAttribute) -> Self {
     self.inner.attributes = attribute as u32;
     Self { inner: self.inner }
   }
 
-  pub fn into_class(self) -> Result<Class, JscError> {
-    let class_ref = unsafe { JSClassCreate(&self.inner as *const JSClassDefinition) };
-    if class_ref.is_null() {
-      return Err(JscError::CreateClassError);
+  pub fn into_class(self) -> Class {
+    Class {
+      inner: unsafe { JSClassCreate(&self.inner as *const JSClassDefinition) },
     }
-    Ok(Class { inner: class_ref })
   }
 }
 

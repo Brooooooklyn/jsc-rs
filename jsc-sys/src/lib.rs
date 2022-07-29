@@ -2,6 +2,7 @@
 extern crate compiler_builtins;
 
 use std::fmt::Display;
+use std::os::raw::c_char;
 use std::slice;
 
 mod binding;
@@ -18,10 +19,10 @@ pub struct WTFStringImpl {
 #[derive(Debug, Clone)]
 pub struct WTString {
   inner: *mut WTFStringImpl,
-  is_utf8: bool,
-  characters8: *const u8,
-  characters16: *const u16,
-  length: u32,
+  pub is_utf8: bool,
+  pub characters8: *const u8,
+  pub characters16: *const u16,
+  pub length: u32,
 }
 
 impl Display for WTString {
@@ -57,6 +58,9 @@ impl Drop for WTString {
 extern "C" {
   pub fn jsc_value_is_int(value: JSValueRef) -> bool;
   pub fn jsc_string_to_wtf_string(string: JSStringRef) -> WTString;
+  /// The created String will be leaked in runtime
+  /// It's used for create Object Property attached to GlobalObject
+  pub fn jsc_string_from_static_rust_str(string: *const c_char) -> JSStringRef;
   pub fn jsc_symbol_desc_string(symbol: JSValueRef) -> WTString;
   fn jsc_wtf_string_release(inner: *mut WTFStringImpl);
 }

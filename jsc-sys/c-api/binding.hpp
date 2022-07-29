@@ -8,6 +8,7 @@
 
 #include <PrivateHeaders/JavaScriptCore/APICast.h>
 #include <PrivateHeaders/JavaScriptCore/ConsoleClient.h>
+#include <PrivateHeaders/JavaScriptCore/JSArray.h>
 #include <PrivateHeaders/JavaScriptCore/JSCJSValue.h>
 #include <PrivateHeaders/JavaScriptCore/JSGlobalObject.h>
 #include <PrivateHeaders/JavaScriptCore/OpaqueJSString.h>
@@ -33,5 +34,6 @@ extern "C"
   bool jsc_value_is_int(JSValueRef value);
   WTFString jsc_string_to_wtf_string(JSStringRef s);
   WTFString jsc_symbol_desc_string(JSValueRef value);
+  JSStringRef jsc_string_from_static_rust_str(const char *str);
   void jsc_wtf_string_release(WTFStringImpl *inner);
 }
