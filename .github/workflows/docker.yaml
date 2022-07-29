@@ -2,7 +2,7 @@ name: Docker nightly build
 
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * 1'
 
 jobs:
   build_image:
@@ -30,6 +30,7 @@ jobs:
         with:
           file: linux-x64.Dockerfile
           platforms: linux/amd64
+          context: .
           push: true
           tags: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
 
@@ -50,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: linux-aarch64.Dockerfile
+          context: .
           platforms: linux/amd64
           push: true
           tags: ghcr.io/brooooooklyn/jsc-rs/linux-builder:aarch64
