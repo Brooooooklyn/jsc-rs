@@ -240,7 +240,11 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
     ""
   };
   let macos_deploy_target_flag = if cfg!(target_os = "macos") {
-    "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15"
+    if cfg!(target_arch = "x86_64") {
+      "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15"
+    } else {
+      "-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0"
+    }
   } else {
     ""
   };
@@ -349,6 +353,9 @@ fn build_js_core(cmake_build_dir: PathBuf, config: JSCoreBuildConfig) {
   });
   #[cfg(target_os = "macos")]
   {
+    #[cfg(target_arch = "aarch64")]
+    cmake_config.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
+    #[cfg(target_arch = "x86_64")]
     cmake_config.env("MACOSX_DEPLOYMENT_TARGET", "10.15");
   }
   cmake_config.env("CMAKE_LIBRARY_PATH", icu4c_source.to_str().unwrap());
