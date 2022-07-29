@@ -1,7 +1,6 @@
 extern crate cc;
 
-use std::env;
-use std::process;
+use std::{env, process};
 
 static LOW_LEVEL_INTERPRETER_LIB: &str = "libLowLevelInterpreterLib.a";
 
@@ -30,7 +29,6 @@ fn main() {
   println!("cargo:rustc-link-search={}", jsc_lib_dir_path.display());
   let mut build = cc::Build::new();
   build
-    .file("c-api/binding.cpp")
     .cpp(true)
     .include("c-api")
     .include(
@@ -207,8 +205,14 @@ fn main() {
         "aarch64" => {
           println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib/llvm-14/lib");
           println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib");
-          println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/lib");
-          println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib/gcc/aarch64-unknown-linux-gnu/4.8.5");
+          println!(
+            "cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/\
+             sysroot/lib"
+          );
+          println!(
+            "cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib/gcc/\
+             aarch64-unknown-linux-gnu/4.8.5"
+          );
           println!(
             "cargo:rustc-link-search={}",
             current_dir
@@ -239,5 +243,5 @@ fn main() {
     println!("cargo:rustc-link-lib=static=JavaScriptCore");
     println!("cargo:rustc-link-lib=static=jscc");
   }
-  build.compile("jscc");
+  build.file("c-api/binding.cpp").compile("jscc");
 }

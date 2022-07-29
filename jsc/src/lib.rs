@@ -1,5 +1,4 @@
-use std::ffi::CString;
-use std::ptr;
+use std::{ffi::CString, ptr};
 
 use jsc_sys::{
   JSContextGetGlobalObject, JSContextGroupCreate, JSContextGroupRef, JSContextGroupRelease,
@@ -13,10 +12,9 @@ mod error;
 mod object;
 mod value;
 
-pub use jsc_sys as sys;
-
 pub use class::*;
 pub use error::*;
+pub use jsc_sys as sys;
 pub use object::*;
 pub use value::*;
 

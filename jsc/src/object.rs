@@ -1,7 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use std::ffi::CString;
-use std::ptr;
+use std::{ffi::CString, ptr};
 
 use bitflags::bitflags;
 use jsc_sys::{
