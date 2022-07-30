@@ -7,13 +7,11 @@
 #include <PrivateHeaders/JavaScriptCore/JSExportMacros.h>
 
 #include <PrivateHeaders/JavaScriptCore/APICast.h>
-#include <PrivateHeaders/JavaScriptCore/ConsoleClient.h>
 #include <PrivateHeaders/JavaScriptCore/JSArray.h>
 #include <PrivateHeaders/JavaScriptCore/JSCJSValue.h>
 #include <PrivateHeaders/JavaScriptCore/JSGlobalObject.h>
 #include <PrivateHeaders/JavaScriptCore/OpaqueJSString.h>
 #include <PrivateHeaders/JavaScriptCore/ScriptArguments.h>
-#include <PrivateHeaders/JavaScriptCore/ScriptValue.h>
 #include <PrivateHeaders/JavaScriptCore/Symbol.h>
 #include <wtf/text/StringImpl.h>
 #include <wtf/Vector.h>

@@ -1,6 +1,8 @@
-use std::ffi::NulError;
-use std::fmt::{Display, Formatter};
-use std::io;
+use std::{
+  ffi::NulError,
+  fmt::{Display, Formatter},
+  io,
+};
 
 use jsc_sys::JSValueRef;
 use thiserror::Error;

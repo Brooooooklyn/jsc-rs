@@ -1,6 +1,4 @@
-use std::ffi::CString;
-use std::os::raw::c_char;
-use std::ptr;
+use std::{ffi::CString, os::raw::c_char, ptr};
 
 use jsc_sys::{JSClassCreate, JSClassDefinition, JSClassRef, JSObjectMake};
 
