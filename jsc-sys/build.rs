@@ -10,6 +10,7 @@ fn main() {
   println!("cargo:rerun-if-changed=c-api/binding.hpp");
   let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
   let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+  let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap();
   let is_windows = target_os == "windows";
   let out_dir = env::var("OUT_DIR").unwrap();
   println!("cargo:rustc-link-search={}", &out_dir);
@@ -186,13 +187,19 @@ fn main() {
       println!("cargo:rustc-link-lib=icucore");
     } else if target_os == "linux" {
       build
-        .cpp_set_stdlib("c++")
         .compiler("clang++")
         .flag(&format!("-I{}", &icu_header_dir));
       match target_arch.as_str() {
         "x86_64" => {
-          println!("cargo:rustc-link-search=/usr/lib/llvm-14/lib");
-          println!("cargo:rustc-link-search=/usr/lib/gcc/x86_64-linux-gnu/9");
+          if target_env == "musl" {
+            build
+              .include("/usr/include/c++/11.2.1/")
+              .include("/usr/include/c++/11.2.1/x86_64-alpine-linux-musl");
+          } else {
+            build.cpp_set_stdlib("c++");
+            println!("cargo:rustc-link-search=/usr/lib/llvm-14/lib");
+            println!("cargo:rustc-link-search=/usr/lib/gcc/x86_64-linux-gnu/9");
+          }
           println!("cargo:rustc-link-lib=static=atomic");
           println!(
             "cargo:rustc-link-search={}",
@@ -219,6 +226,7 @@ fn main() {
               .unwrap()
           );
           build
+            .include("/usr/aarch64-unknown-linux-gnu/lib/llvm-14/include/c++/v1")
             .include("/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include")
             .flag("-DUSE_SYSTEM_MALLOC=1")
             .flag("--sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot");
@@ -227,7 +235,12 @@ fn main() {
           panic!("Unsupported arch {target_arch}");
         }
       }
-      println!("cargo:rustc-link-lib=static=c++");
+      if target_env == "musl" {
+        println!("cargo:rustc-link-search=/usr/lib");
+        println!("cargo:rustc-link-lib=static=stdc++");
+      } else {
+        println!("cargo:rustc-link-lib=static=c++");
+      }
       println!("cargo:rustc-link-lib=static=icudata");
       println!("cargo:rustc-link-lib=static=icuuc");
       println!("cargo:rustc-link-lib=static=icui18n");
