@@ -42,6 +42,7 @@ fn build_osx(cmake_build_dir: PathBuf) {
 fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
   let is_cross_aarch64_gnu =
     env::var("CARGO_BUILD_TARGET") == Ok("aarch64-unknown-linux-gnu".to_owned());
+  let is_musl = cfg!(target_env = "musl");
   build_icu(icu4c_dir.clone(), is_cross_aarch64_gnu);
   let cross_flag = if is_cross_aarch64_gnu {
     "-I/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot"
@@ -50,8 +51,21 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
   };
   let libcpp_flag = if is_cross_aarch64_gnu {
     format!("-march=armv8-a --target=aarch64-unknown-linux-gnu --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot")
+  } else if is_musl {
+    String::new()
   } else {
     "-I/usr/lib/llvm-14/include/c++/v1 -L/usr/lib/llvm-14/lib".to_owned()
+  };
+  let static_link_cpp_flag = if is_musl { "" } else { "-stdlib=libc++" };
+  let use_lld_flag = if is_musl {
+    "-fuse-ld=lld"
+  } else {
+    "-fuse-ld=lld"
+  };
+  let aarch64_gnu_cross_flag = if is_cross_aarch64_gnu {
+    AARCH64_LINUX_GNU_LD_FLAG
+  } else {
+    ""
   };
   build_js_core(
     cmake_build_dir,
@@ -60,7 +74,7 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
       set_system_cc: true,
       self_build_icu: true,
       extra_cxx_flag: format!(
-        "-fuse-ld=lld -stdlib=libc++ -I{} {libcpp_flag}",
+        "{use_lld_flag} {static_link_cpp_flag} -I{} {libcpp_flag}",
         icu4c_dir
           .parent()
           .unwrap()
@@ -68,7 +82,7 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
           .to_str()
           .unwrap(),
       ),
-      extra_c_flag: format!("-fuse-ld=lld {libcpp_flag} {AARCH64_LINUX_GNU_LD_FLAG}"),
+      extra_c_flag: format!("{use_lld_flag} {libcpp_flag} {aarch64_gnu_cross_flag}"),
       ..Default::default()
     },
   );
@@ -110,6 +124,7 @@ struct JSCoreBuildConfig {
 }
 
 fn build_icu(icu4c_dir: PathBuf, is_cross_aarch64_gnu: bool) {
+  let is_musl = cfg!(target_env = "musl");
   if is_cross_aarch64_gnu {
     build_icu(icu4c_dir.clone(), false);
   }
@@ -181,6 +196,8 @@ fn build_icu(icu4c_dir: PathBuf, is_cross_aarch64_gnu: bool) {
         "/std:c++20 -Gy -MD".to_owned()
       } else if is_cross_aarch64_gnu {
         format!("{cross_flag} -std=c++20 -stdlib=libc++")
+      } else if is_musl {
+        "-fuse-ld=lld -std=c++20".to_owned()
       } else {
         "-fuse-ld=lld -std=c++20 -stdlib=libc++ -I/usr/lib/llvm-14/include/c++/v1".to_owned()
       },

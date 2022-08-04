@@ -5,11 +5,16 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["rustls-tls"]
+native-tls = ["octorust/native-tls", "reqwest/default-tls"]
+rustls-tls = ["octorust/rustls-tls", "reqwest/rustls-tls"]
+
 [dependencies]
 clap = { version = "3", features = ["derive"] }
 num_cpus = "1"
 octorust = "0.1"
-reqwest = "0.11"
+reqwest = { version = "0.11", default-features = false, features = ["json", "multipart"] }
 tar = "0.4"
 toml = { version = "0.5" }
 serde = { version = "1", features = ["derive"] }
