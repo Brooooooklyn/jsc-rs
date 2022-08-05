@@ -1,9 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use std::fs;
-use std::os::raw::c_char;
-use std::process;
-use std::ptr;
+use std::{fs, os::raw::c_char, process, ptr};
 
 use clap::{self, Parser};
 use jsc_safe::{ClassAttribute, ClassDefinition, Context, JscError, PropertyAttributes};

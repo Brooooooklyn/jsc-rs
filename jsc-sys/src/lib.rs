@@ -1,9 +1,7 @@
 #[cfg(not(target_os = "windows"))]
 extern crate compiler_builtins;
 
-use std::fmt::Display;
-use std::os::raw::c_char;
-use std::slice;
+use std::{fmt::Display, os::raw::c_char, slice};
 
 mod binding;
 

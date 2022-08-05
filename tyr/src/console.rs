@@ -1,6 +1,4 @@
-use std::collections::HashSet;
-use std::ptr;
-use std::slice;
+use std::{collections::HashSet, ptr, slice};
 
 use jsc_safe::sys::*;
 
