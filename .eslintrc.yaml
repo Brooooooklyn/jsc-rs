@@ -18,6 +18,7 @@ ignorePatterns:
   - jsc-sys
   - tyr
   - xtask
+  - specs
 
 env:
   browser: false

@@ -50,3 +50,5 @@ icu-linux-aarch64
 !.yarn/sdks
 !.yarn/versions
 node_modules
+
+webapi/webcore-build

@@ -55,6 +55,7 @@ impl Drop for WTString {
 
 extern "C" {
   pub fn jsc_value_is_int(value: JSValueRef) -> bool;
+  pub fn jsc_value_as_int(value: JSValueRef) -> i32;
   pub fn jsc_string_to_wtf_string(string: JSStringRef) -> WTString;
   /// The created String will be leaked in runtime
   /// It's used for create Object Property attached to GlobalObject

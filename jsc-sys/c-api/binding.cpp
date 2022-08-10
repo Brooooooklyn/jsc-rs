@@ -25,6 +25,12 @@ extern "C"
     return jsValue.isAnyInt();
   }
 
+  int32_t jsc_value_as_int(JSValueRef value)
+  {
+    auto jsValue = toJS(value);
+    return jsValue.asInt32();
+  }
+
   WTFString jsc_symbol_desc_string(JSValueRef value)
   {
     auto jsValue = toJS(value);

@@ -1,5 +1,13 @@
 [workspace]
-members = ["jsc", "jsc-sys", "tyr", "node-api", "xtask"]
+members = [
+  "build-support",
+  "jsc",
+  "jsc-sys",
+  "tyr",
+  "node-api",
+  "xtask",
+  "webapi",
+]
 
 [profile.release]
 lto = true
