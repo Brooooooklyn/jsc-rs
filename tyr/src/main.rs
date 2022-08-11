@@ -67,14 +67,16 @@ fn main() {
     }
     _ => {}
   }
-  GLOBAL_RUNTIME.block_on(async move {
-    while let Some(cb) = receiver.recv().await {
-      cb.call(ctx.raw());
-      if ASYNC_TASK_QUEUE_SIZE.fetch_sub(1, Ordering::Relaxed) == 1 {
-        break;
-      };
-    }
-  });
+  if ASYNC_TASK_QUEUE_SIZE.load(Ordering::Relaxed) > 0 {
+    GLOBAL_RUNTIME.block_on(async move {
+      while let Some(cb) = receiver.recv().await {
+        cb.call(ctx.raw());
+        if ASYNC_TASK_QUEUE_SIZE.fetch_sub(1, Ordering::Relaxed) == 1 {
+          break;
+        };
+      }
+    });
+  }
 }
 
 fn create_runtime(ctx: &Context) -> Result<(), JscError> {
@@ -82,9 +84,15 @@ fn create_runtime(ctx: &Context) -> Result<(), JscError> {
   let console = console::create(&ctx)?;
   let btoa = ctx.create_function("btoa", Some(web::btoa::btoa))?;
   let set_timeout = ctx.create_function("setTimeout", Some(timer::set_timeout))?;
+  let clear_timeout = ctx.create_function("clearTimeout", Some(timer::clear_timeout))?;
   global.set_property("console", &console, PropertyAttributes::DontDelete)?;
   global.set_property("btoa", &btoa, PropertyAttributes::DontDelete)?;
   global.set_property("setTimeout", &set_timeout, PropertyAttributes::DontDelete)?;
+  global.set_property(
+    "clearTimeout",
+    &clear_timeout,
+    PropertyAttributes::DontDelete,
+  )?;
   let tyr = Tyr::parse();
   let script = fs::read_to_string(tyr.entry)?;
   ctx.eval(script)?;
@@ -97,6 +105,11 @@ pub(crate) fn c_str(s: &str) -> *const c_char {
 }
 
 #[inline]
-pub(crate) fn queue_async_task() {
-  ASYNC_TASK_QUEUE_SIZE.fetch_add(1, Ordering::Relaxed);
+pub(crate) fn queue_async_task() -> u32 {
+  ASYNC_TASK_QUEUE_SIZE.fetch_add(1, Ordering::Relaxed)
+}
+
+#[inline]
+pub(crate) fn dequeue_async_task() -> u32 {
+  ASYNC_TASK_QUEUE_SIZE.fetch_sub(1, Ordering::Relaxed)
 }

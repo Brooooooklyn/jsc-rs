@@ -67,3 +67,23 @@ pub unsafe extern "C" fn set_timeout(
   timer_map_lock_guard.insert(timer_id, jh);
   JSValueMakeNumber(ctx, timer_id as f64)
 }
+
+pub unsafe extern "C" fn clear_timeout(
+  ctx: JSContextRef,
+  _function: JSObjectRef,
+  _this: JSObjectRef,
+  argument_count: usize,
+  arguments: *const JSValueRef,
+  _exception: *mut JSValueRef,
+) -> JSValueRef {
+  let args = slice::from_raw_parts(arguments, argument_count);
+  let timer_id = args[0];
+  let timer_id = jsc_value_as_int(timer_id) as u32;
+  let timer_map_lock_guard = TIMER_MAP.lock().unwrap();
+  if let Some(jh) = timer_map_lock_guard.get(&timer_id) {
+    jh.abort();
+    crate::dequeue_async_task();
+  }
+  drop(timer_map_lock_guard);
+  JSValueMakeUndefined(ctx)
+}
