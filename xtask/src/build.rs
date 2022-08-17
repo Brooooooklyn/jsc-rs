@@ -1,11 +1,15 @@
 #![allow(unused)]
 
-use std::env;
-use std::fs;
-use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::{
+  env, fs,
+  path::PathBuf,
+  process::{Command, Stdio},
+};
 
-static AARCH64_LINUX_GNU_LD_FLAG: &str = "-L/usr/aarch64-unknown-linux-gnu/lib/llvm-14/lib -L/usr/aarch64-unknown-linux-gnu/lib -L/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/lib -L/usr/aarch64-unknown-linux-gnu/lib/gcc/aarch64-unknown-linux-gnu/4.8.5";
+static AARCH64_LINUX_GNU_LD_FLAG: &str =
+  "-L/usr/aarch64-unknown-linux-gnu/lib/llvm-14/lib -L/usr/aarch64-unknown-linux-gnu/lib \
+   -L/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/lib \
+   -L/usr/aarch64-unknown-linux-gnu/lib/gcc/aarch64-unknown-linux-gnu/4.8.5";
 
 pub fn build() {
   let current_dir = env::current_dir().expect("get current_dir failed");
@@ -45,12 +49,16 @@ fn build_linux(cmake_build_dir: PathBuf, icu4c_dir: PathBuf) {
   let is_musl = cfg!(target_env = "musl");
   build_icu(icu4c_dir.clone(), is_cross_aarch64_gnu);
   let cross_flag = if is_cross_aarch64_gnu {
-    "-I/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot"
+    "-I/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include \
+     --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot"
   } else {
     ""
   };
   let libcpp_flag = if is_cross_aarch64_gnu {
-    format!("-march=armv8-a --target=aarch64-unknown-linux-gnu --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot")
+    format!(
+      "-march=armv8-a --target=aarch64-unknown-linux-gnu \
+       --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot"
+    )
   } else if is_musl {
     String::new()
   } else {
@@ -143,7 +151,15 @@ fn build_icu(icu4c_dir: PathBuf, is_cross_aarch64_gnu: bool) {
   icu4c_config.arg("-c");
   icu4c_config.arg(&format!(
     "{} {} --enable-static=yes --enable-shared=no --with-data-packaging=static --prefix={} {}",
-    icu4c_dir.join(if is_cross_aarch64_gnu { "configure" } else { "runConfigureICU" }).to_str().unwrap().replace(r#"\"#, "/"),
+    icu4c_dir
+      .join(if is_cross_aarch64_gnu {
+        "configure"
+      } else {
+        "runConfigureICU"
+      })
+      .to_str()
+      .unwrap()
+      .replace(r#"\"#, "/"),
     if is_cross_aarch64_gnu {
       ""
     } else if cfg!(target_os = "linux") {
@@ -153,12 +169,23 @@ fn build_icu(icu4c_dir: PathBuf, is_cross_aarch64_gnu: bool) {
     } else {
       panic!("Unsupported OS")
     },
-    icu4c_dir.parent().unwrap().to_str().unwrap().replace(r#"\"#, "/"),
+    icu4c_dir
+      .parent()
+      .unwrap()
+      .to_str()
+      .unwrap()
+      .replace(r#"\"#, "/"),
     if cfg!(target_os = "windows") {
-      format!("--enable-extras=no --enable-tests=no --enable-tools=no --enable-samples=no --build=x86_64-msvc-mingw64 --host=x86_64-msvc-mingw64")
+      format!(
+        "--enable-extras=no --enable-tests=no --enable-tools=no --enable-samples=no \
+         --build=x86_64-msvc-mingw64 --host=x86_64-msvc-mingw64"
+      )
     } else if is_cross_aarch64_gnu {
       fs::create_dir_all(ICU_AARCH64_DIR).expect("Create cross build dir faild");
-      format!("--host=x86_64-pc-linux --build=aarch64-pc-linux --with-cross-build={}", icu4c_dir.display())
+      format!(
+        "--host=x86_64-pc-linux --build=aarch64-pc-linux --with-cross-build={}",
+        icu4c_dir.display()
+      )
     } else {
       String::new()
     }
@@ -170,7 +197,9 @@ fn build_icu(icu4c_dir: PathBuf, is_cross_aarch64_gnu: bool) {
   let cross_flag;
   let cross_ld_flag;
   if is_cross_aarch64_gnu {
-    cross_flag = "-fuse-ld=lld -march=armv8-a --target=aarch64-unknown-linux-gnu -I/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot";
+    cross_flag = "-fuse-ld=lld -march=armv8-a --target=aarch64-unknown-linux-gnu \
+                  -I/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include \
+                  --sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot";
     cross_ld_flag = AARCH64_LINUX_GNU_LD_FLAG;
   } else {
     cross_flag = "";

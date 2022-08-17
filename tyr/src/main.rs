@@ -1,18 +1,33 @@
 #![allow(non_upper_case_globals)]
 
-use std::fs;
-use std::os::raw::c_char;
-use std::process;
-use std::ptr;
+use std::{
+  fs,
+  os::raw::c_char,
+  process, ptr,
+  sync::atomic::{AtomicU32, Ordering},
+};
 
+use async_callback::AsyncCallback;
 use clap::{self, Parser};
 use jsc_safe::{ClassAttribute, ClassDefinition, Context, JscError, PropertyAttributes};
+use once_cell::sync::{Lazy, OnceCell};
+use tokio::{
+  runtime::{Builder, Runtime},
+  sync::mpsc::{unbounded_channel, UnboundedSender},
+};
 
 #[cfg(all(not(all(target_os = "linux", target_env = "musl", target_arch = "aarch64")),))]
 #[global_allocator]
 static ALLOC: mimalloc_rust::GlobalMiMalloc = mimalloc_rust::GlobalMiMalloc;
 
+pub(crate) static GLOBAL_SENDER: OnceCell<UnboundedSender<AsyncCallback>> = OnceCell::new();
+pub(crate) static GLOBAL_RUNTIME: Lazy<Runtime> =
+  Lazy::new(|| Builder::new_multi_thread().enable_all().build().unwrap());
+static ASYNC_TASK_QUEUE_SIZE: AtomicU32 = AtomicU32::new(0);
+
+mod async_callback;
 mod console;
+mod timer;
 mod web;
 mod wellknown_property_name;
 
@@ -30,6 +45,9 @@ fn main() {
     .with_attribute(ClassAttribute::NoAutomaticPrototype)
     .into_class();
   let ctx = Context::with_global_class(global_class);
+  let _ = GLOBAL_RUNTIME.enter();
+  let (sender, mut receiver) = unbounded_channel::<AsyncCallback>();
+  GLOBAL_SENDER.get_or_init(move || sender);
   match create_runtime(&ctx) {
     Err(JscError::JSCException(exception)) => {
       let js_error = unsafe {
@@ -49,32 +67,49 @@ fn main() {
     }
     _ => {}
   }
+  if ASYNC_TASK_QUEUE_SIZE.load(Ordering::Relaxed) > 0 {
+    GLOBAL_RUNTIME.block_on(async move {
+      while let Some(cb) = receiver.recv().await {
+        cb.call(ctx.raw());
+        if ASYNC_TASK_QUEUE_SIZE.fetch_sub(1, Ordering::Relaxed) == 1 {
+          break;
+        };
+      }
+    });
+  }
 }
 
 fn create_runtime(ctx: &Context) -> Result<(), JscError> {
   let mut global = ctx.global();
-  let mut console = ClassDefinition::default()
-    .with_c_name(c_str("Console\0"))
-    .with_attribute(ClassAttribute::NoAutomaticPrototype)
-    .into_class()
-    .make_object(&ctx);
-  let log = ctx.create_function("log", Some(console::log))?;
-  let info = ctx.create_function("info", Some(console::log))?;
-  let warn = ctx.create_function("warn", Some(console::log))?;
-  let error = ctx.create_function("error", Some(console::log))?;
+  let console = console::create(&ctx)?;
   let btoa = ctx.create_function("btoa", Some(web::btoa::btoa))?;
-  console.set_property("log", &log, PropertyAttributes::None)?;
-  console.set_property("info", &info, PropertyAttributes::None)?;
-  console.set_property("warn", &warn, PropertyAttributes::None)?;
-  console.set_property("error", &error, PropertyAttributes::None)?;
+  let set_timeout = ctx.create_function("setTimeout", Some(timer::set_timeout))?;
+  let clear_timeout = ctx.create_function("clearTimeout", Some(timer::clear_timeout))?;
   global.set_property("console", &console, PropertyAttributes::DontDelete)?;
   global.set_property("btoa", &btoa, PropertyAttributes::DontDelete)?;
+  global.set_property("setTimeout", &set_timeout, PropertyAttributes::DontDelete)?;
+  global.set_property(
+    "clearTimeout",
+    &clear_timeout,
+    PropertyAttributes::DontDelete,
+  )?;
   let tyr = Tyr::parse();
   let script = fs::read_to_string(tyr.entry)?;
   ctx.eval(script)?;
   Ok(())
 }
 
-fn c_str(s: &str) -> *const c_char {
+#[inline(always)]
+pub(crate) fn c_str(s: &str) -> *const c_char {
   s.as_ptr() as *const c_char
+}
+
+#[inline]
+pub(crate) fn queue_async_task() -> u32 {
+  ASYNC_TASK_QUEUE_SIZE.fetch_add(1, Ordering::Relaxed)
+}
+
+#[inline]
+pub(crate) fn dequeue_async_task() -> u32 {
+  ASYNC_TASK_QUEUE_SIZE.fetch_sub(1, Ordering::Relaxed)
 }

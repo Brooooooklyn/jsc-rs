@@ -7,18 +7,17 @@
 #include <PrivateHeaders/JavaScriptCore/JSExportMacros.h>
 
 #include <PrivateHeaders/JavaScriptCore/APICast.h>
-#include <PrivateHeaders/JavaScriptCore/ConsoleClient.h>
 #include <PrivateHeaders/JavaScriptCore/JSArray.h>
 #include <PrivateHeaders/JavaScriptCore/JSCJSValue.h>
 #include <PrivateHeaders/JavaScriptCore/JSGlobalObject.h>
 #include <PrivateHeaders/JavaScriptCore/OpaqueJSString.h>
 #include <PrivateHeaders/JavaScriptCore/ScriptArguments.h>
-#include <PrivateHeaders/JavaScriptCore/ScriptValue.h>
 #include <PrivateHeaders/JavaScriptCore/Symbol.h>
 #include <wtf/text/StringImpl.h>
 #include <wtf/Vector.h>
 
 typedef struct WTFStringImpl WTFStringImpl;
+typedef struct JSContext JSContext;
 
 struct WTFString
 {
@@ -32,6 +31,7 @@ struct WTFString
 extern "C"
 {
   bool jsc_value_is_int(JSValueRef value);
+  int32_t jsc_value_as_int(JSValueRef value);
   WTFString jsc_string_to_wtf_string(JSStringRef s);
   WTFString jsc_symbol_desc_string(JSValueRef value);
   JSStringRef jsc_string_from_static_rust_str(const char *str);

@@ -1,10 +1,27 @@
-use std::collections::HashSet;
-use std::ptr;
-use std::slice;
+use std::{collections::HashSet, ptr, slice};
 
-use jsc_safe::sys::*;
+use jsc_safe::{
+  sys::*, ClassAttribute, ClassDefinition, Context, JscError, Object, PropertyAttributes,
+};
 
 use crate::wellknown_property_name;
+
+pub fn create(ctx: &Context) -> Result<Object, JscError> {
+  let mut console = ClassDefinition::default()
+    .with_c_name(crate::c_str("Console\0"))
+    .with_attribute(ClassAttribute::NoAutomaticPrototype)
+    .into_class()
+    .make_object(&ctx);
+  let log_fn = ctx.create_function("log", Some(log))?;
+  let info_fn = ctx.create_function("info", Some(log))?;
+  let warn_fn = ctx.create_function("warn", Some(log))?;
+  let error_fn = ctx.create_function("error", Some(log))?;
+  console.set_property("log", &log_fn, PropertyAttributes::None)?;
+  console.set_property("info", &info_fn, PropertyAttributes::None)?;
+  console.set_property("warn", &warn_fn, PropertyAttributes::None)?;
+  console.set_property("error", &error_fn, PropertyAttributes::None)?;
+  Ok(console)
+}
 
 pub unsafe extern "C" fn log(
   ctx: JSContextRef,
