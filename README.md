@@ -11,7 +11,7 @@ Tyr is a simple runtime for JavaScript and TypeScript that uses JavaScriptCore a
 | ---------------- | ------------- | -------------------------- | ------------------------------------- | ----------- |
 | Linux            | x86_64        | glibc >= 2.17              | e.g. Ubuntu 14.04, Debian 9, CentOS 7 | ✅          |
 | Linux            | arm64         | glibc >= 2.17              | e.g. Ubuntu 14.04, Debian 9, CentOS 7 | ✅          |
-| Linux            | x86_64        | musl >= 1.1.19             | e.g. Alpine 3.8                       | coming soon |
+| Linux            | x86_64        | musl >= 1.1.19             | e.g. Alpine 3.8                       | ✅          |
 | Linux            | arm64         | musl >= 1.1.19             | e.g. Alpine 3.8                       | coming soon |
 | Linux            | armv7         | glibc >= 2.28              | e.g. Ubuntu 18.04, Debian 10          | coming soon |
 | macOS            | x64           | \>= 10.15                  |                                       | ✅          |
