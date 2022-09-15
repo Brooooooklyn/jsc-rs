@@ -27,7 +27,7 @@ jobs:
           logout: false
 
       - name: Build and push Linux x64
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: linux-x64.Dockerfile
           platforms: linux/amd64
@@ -36,7 +36,7 @@ jobs:
           tags: ghcr.io/brooooooklyn/jsc-rs/linux-builder:x64
 
       - name: Build and push Linux x64 musl
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: linux-x64-musl.Dockerfile
           platforms: linux/amd64
@@ -58,7 +58,7 @@ jobs:
             apt-get update &&
             apt-get install libc++-14-dev libc++abi-14-dev -y --fix-missing --no-install-recommends
       - name: Build and push Linux aarch64
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: linux-aarch64.Dockerfile
           context: .
