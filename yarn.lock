@@ -67,12 +67,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@taplo/cli@npm:^0.4.2":
-  version: 0.4.2
-  resolution: "@taplo/cli@npm:0.4.2::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2F%40taplo%2Fcli%2F-%2Fcli-0.4.2.tgz"
+"@taplo/cli@npm:0.5.2":
+  version: 0.5.2
+  resolution: "@taplo/cli@npm:0.5.2"
   bin:
     taplo: dist/cli.js
-  checksum: 54ba47b749b8f0ade7f948cdfb720597484a06c1e10430765ac3e0c139ca89b8ed88d3033e0750c7ce9dc2f8b245d6e37987d399229db817cbbb4bda67e94518
+  checksum: c2e0e584172bfee1cca6624bdb4470259179e232472fc7f4bbbd2e0127233039b9ace21a8d6b8d5081b157d9f046dc942ab27a634e23924b8c8a6096f1d04e27
   languageName: node
   linkType: hard
 
@@ -1683,7 +1683,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "jsc-rs@workspace:."
   dependencies:
-    "@taplo/cli": ^0.4.2
+    "@taplo/cli": 0.5.2
     "@types/react": ^18.0.15
     "@types/react-dom": ^18.0.6
     "@typescript-eslint/eslint-plugin": ^5.30.7
