@@ -125,9 +125,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:^18.0.6":
+"@types/react-dom@npm:18.0.6":
   version: 18.0.6
-  resolution: "@types/react-dom@npm:18.0.6::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2F%40types%2Freact-dom%2F-%2Freact-dom-18.0.6.tgz"
+  resolution: "@types/react-dom@npm:18.0.6"
   dependencies:
     "@types/react": "*"
   checksum: db571047af1a567631758700b9f7d143e566df939cfe5fbf7535347cc0c726a1cdbb5e3f8566d076e54cf708b6c1166689de194a9ba09ee35efc9e1d45911685
@@ -984,9 +984,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-prettier@npm:^8.5.0":
+"eslint-config-prettier@npm:8.5.0":
   version: 8.5.0
-  resolution: "eslint-config-prettier@npm:8.5.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Feslint-config-prettier%2F-%2Feslint-config-prettier-8.5.0.tgz"
+  resolution: "eslint-config-prettier@npm:8.5.0"
   peerDependencies:
     eslint: ">=7.0.0"
   bin:
@@ -1015,9 +1015,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-import@npm:^2.26.0":
+"eslint-plugin-import@npm:2.26.0":
   version: 2.26.0
-  resolution: "eslint-plugin-import@npm:2.26.0::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Feslint-plugin-import%2F-%2Feslint-plugin-import-2.26.0.tgz"
+  resolution: "eslint-plugin-import@npm:2.26.0"
   dependencies:
     array-includes: ^3.1.4
     array.prototype.flat: ^1.2.5
@@ -1495,9 +1495,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"husky@npm:^8.0.1":
+"husky@npm:8.0.1":
   version: 8.0.1
-  resolution: "husky@npm:8.0.1::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fhusky%2F-%2Fhusky-8.0.1.tgz"
+  resolution: "husky@npm:8.0.1"
   bin:
     husky: lib/bin.js
   checksum: 943a73a13d0201318fd30e83d299bb81d866bd245b69e6277804c3b462638dc1921694cb94c2b8c920a4a187060f7d6058d3365152865406352e934c5fff70dc
@@ -1751,17 +1751,17 @@ __metadata:
   dependencies:
     "@taplo/cli": 0.5.2
     "@types/react": 18.0.21
-    "@types/react-dom": ^18.0.6
+    "@types/react-dom": 18.0.6
     "@typescript-eslint/eslint-plugin": 5.38.0
     "@typescript-eslint/parser": 5.38.0
     esbuild: 0.15.9
     eslint: 8.24.0
-    eslint-config-prettier: ^8.5.0
-    eslint-plugin-import: ^2.26.0
-    husky: ^8.0.1
-    lint-staged: ^13.0.3
-    npm-run-all: ^4.1.5
-    prettier: ^2.7.1
+    eslint-config-prettier: 8.5.0
+    eslint-plugin-import: 2.26.0
+    husky: 8.0.1
+    lint-staged: 13.0.3
+    npm-run-all: 4.1.5
+    prettier: 2.7.1
     typescript: 4.8.3
   languageName: unknown
   linkType: soft
@@ -1815,9 +1815,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lint-staged@npm:^13.0.3":
+"lint-staged@npm:13.0.3":
   version: 13.0.3
-  resolution: "lint-staged@npm:13.0.3::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Flint-staged%2F-%2Flint-staged-13.0.3.tgz"
+  resolution: "lint-staged@npm:13.0.3"
   dependencies:
     cli-truncate: ^3.1.0
     colorette: ^2.0.17
@@ -2033,9 +2033,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"npm-run-all@npm:^4.1.5":
+"npm-run-all@npm:4.1.5":
   version: 4.1.5
-  resolution: "npm-run-all@npm:4.1.5::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fnpm-run-all%2F-%2Fnpm-run-all-4.1.5.tgz"
+  resolution: "npm-run-all@npm:4.1.5"
   dependencies:
     ansi-styles: ^3.2.1
     chalk: ^2.4.1
@@ -2316,9 +2316,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^2.7.1":
+"prettier@npm:2.7.1":
   version: 2.7.1
-  resolution: "prettier@npm:2.7.1::__archiveUrl=https%3A%2F%2Fregistry.npmmirror.com%2Fprettier%2F-%2Fprettier-2.7.1.tgz"
+  resolution: "prettier@npm:2.7.1"
   bin:
     prettier: bin-prettier.js
   checksum: 55a4409182260866ab31284d929b3cb961e5fdb91fe0d2e099dac92eaecec890f36e524b4c19e6ceae839c99c6d7195817579cdffc8e2c80da0cb794463a748b
