@@ -128,12 +128,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:18.0.8":
-  version: 18.0.8
-  resolution: "@types/react-dom@npm:18.0.8"
+"@types/react-dom@npm:18.0.10":
+  version: 18.0.10
+  resolution: "@types/react-dom@npm:18.0.10"
   dependencies:
     "@types/react": "*"
-  checksum: 522e5e949d05f35c6037a2290838c9c7ff92a9d06f7d96b993c7c3f5a86d8f3a6337e059c94e6fb0920227f445e5d1ce10fbfe3d9bbd95fb82a5539249d90646
+  checksum: ff8282d5005a0b1cd95fb65bf79d3d8485e4cfe2aaf052129033a178684b940014a3f4536bc20d573f8a01cf4c6f4770c74988cef7c2b5cac3041d9f172647e3
   languageName: node
   linkType: hard
 
@@ -1771,7 +1771,7 @@ __metadata:
   dependencies:
     "@taplo/cli": 0.5.2
     "@types/react": 18.0.25
-    "@types/react-dom": 18.0.8
+    "@types/react-dom": 18.0.10
     "@typescript-eslint/eslint-plugin": 5.44.0
     "@typescript-eslint/parser": 5.44.0
     esbuild: 0.15.16
