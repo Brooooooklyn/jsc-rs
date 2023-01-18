@@ -5,7 +5,7 @@
   "type": "module",
   "devDependencies": {
     "@taplo/cli": "0.5.2",
-    "@types/react": "18.0.25",
+    "@types/react": "18.0.27",
     "@types/react-dom": "18.0.8",
     "@typescript-eslint/eslint-plugin": "5.44.0",
     "@typescript-eslint/parser": "5.44.0",
