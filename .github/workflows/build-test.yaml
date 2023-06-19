@@ -148,7 +148,7 @@ jobs:
     needs:
       - build
     container:
-      image: centos:7
+      image: centos:8
     steps:
       - uses: actions/checkout@v3
       - name: Download binary
