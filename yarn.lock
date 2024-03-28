@@ -128,12 +128,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:18.0.8":
-  version: 18.0.8
-  resolution: "@types/react-dom@npm:18.0.8"
+"@types/react-dom@npm:18.2.23":
+  version: 18.2.23
+  resolution: "@types/react-dom@npm:18.2.23"
   dependencies:
     "@types/react": "*"
-  checksum: 522e5e949d05f35c6037a2290838c9c7ff92a9d06f7d96b993c7c3f5a86d8f3a6337e059c94e6fb0920227f445e5d1ce10fbfe3d9bbd95fb82a5539249d90646
+  checksum: ebed13ffc393f96b3dbe2f959c857c3124c20e84718cded13016eaa2e3b650590557ea75584c4d3d3f226b0aae206167c9c81e971632c1f24bbd258f1d295b96
   languageName: node
   linkType: hard
 
@@ -148,14 +148,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:18.0.25":
-  version: 18.0.25
-  resolution: "@types/react@npm:18.0.25"
+"@types/react@npm:18.2.73":
+  version: 18.2.73
+  resolution: "@types/react@npm:18.2.73"
   dependencies:
     "@types/prop-types": "*"
-    "@types/scheduler": "*"
     csstype: ^3.0.2
-  checksum: 231d658c45abdef044a716b4502774f1585d8336d73b2f5bd68f181acbfc874b7a457686ecd29b415b43ed0922c309bab7e2cf96832d188a3f4f1b02f2af760a
+  checksum: 0921d3e3286f11365e796f01eff4fb64de315c68f569e0bbfdaa7680dc4b774c7e8dc416d72d77f7f16a0c2075048429386a55bbfd43ac507d1dddc8d44142e7
   languageName: node
   linkType: hard
 
@@ -1770,8 +1769,8 @@ __metadata:
   resolution: "jsc-rs@workspace:."
   dependencies:
     "@taplo/cli": 0.5.2
-    "@types/react": 18.0.25
-    "@types/react-dom": 18.0.8
+    "@types/react": 18.2.73
+    "@types/react-dom": 18.2.23
     "@typescript-eslint/eslint-plugin": 5.44.0
     "@typescript-eslint/parser": 5.44.0
     esbuild: 0.15.16
