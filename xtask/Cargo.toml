@@ -11,7 +11,7 @@ native-tls = ["octorust/native-tls", "reqwest/default-tls"]
 rustls-tls = ["octorust/rustls-tls", "reqwest/rustls-tls"]
 
 [dependencies]
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 num_cpus = "1"
 octorust = "0.2"
 reqwest = { version = "0.11", default-features = false, features = [
